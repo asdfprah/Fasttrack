@@ -11,8 +11,18 @@
             "email": "j.fuentes.delaguarda@gmail.com"
         }
     ],
+    "minimum-stability": "dev",
+    "version": "0.1.0",
     "require": {
-        "rawr/t-regx": "*",
-        "doctrine/dbal": "*"
+        "rawr/t-regx": "^0.19.0",
+        "doctrine/dbal": "^3.3.0",
+        "spatie/laravel-query-builder": "^4.0.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Asdfprah\\Fasttrack\\Providers\\FasttrackServiceProvider"
+            ]
+        }
     }
 }

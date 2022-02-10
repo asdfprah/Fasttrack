@@ -16,6 +16,7 @@ class Describer{
      * @return \Doctrine\DBAL\Schema\Column
      */
     private static function getColumn( string $connection ,string $table, string $column  ){
+        Schema::connection( $connection )->getConnection()->getDoctrineSchemaManager()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
         return Schema::connection( $connection )->getConnection()->getDoctrineColumn($table, $column);
     }
 
