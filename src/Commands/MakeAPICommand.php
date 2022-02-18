@@ -21,7 +21,7 @@ class MakeAPICommand extends Command
      *
      * @var string
      */
-    protected $signature = 'fasttrack:api {model}';
+    protected $signature = 'fasttrack:api {model?}';
 
     /**
      * The console command description.
