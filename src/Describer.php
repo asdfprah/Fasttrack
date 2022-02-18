@@ -3,6 +3,7 @@
 namespace Asdfprah\Fasttrack;
 
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 use stdClass;
 
@@ -16,8 +17,8 @@ class Describer{
      * @return \Doctrine\DBAL\Schema\Column
      */
     private static function getColumn( string $connection ,string $table, string $column  ){
-        Schema::connection( $connection )->getConnection()->getDoctrineSchemaManager()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
-        return Schema::connection( $connection )->getConnection()->getDoctrineColumn($table, $column);
+        DB::connection( $connection )->getDoctrineSchemaManager()->getDatabasePlatform()->registerDoctrineTypeMapping('enum', 'string');
+        return DB::connection( $connection )->getDoctrineColumn($table, $column);
     }
 
     /**
@@ -47,7 +48,7 @@ class Describer{
      */
     public static function getForeignKeys( string $connection, string $table ){
         $foreignDescription =  [];
-        $foreignList = Schema::connection( $connection )->getConnection()->getDoctrineSchemaManager()->listTableForeignKeys($table);
+        $foreignList = DB::connection( $connection )->getDoctrineSchemaManager()->listTableForeignKeys($table);
         foreach ($foreignList as $foreign) {
             $fk = new stdClass();
             $fk->localColumn = $foreign->getLocalColumns();
