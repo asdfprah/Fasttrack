@@ -3,10 +3,8 @@
 namespace Asdfprah\Fasttrack\Commands;
 
 use Asdfprah\Fasttrack\Fasttrack;
-use Asdfprah\Fasttrack\Mapper;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 
 class MakeAPICommand extends Command
 {
@@ -77,12 +75,6 @@ class MakeAPICommand extends Command
             file_put_contents($path , $routes,  FILE_APPEND | LOCK_EX);
 
         }
-
-        
-
-              
-
-       
 
         return 0;
     }
