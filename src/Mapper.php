@@ -3,6 +3,7 @@
 namespace Asdfprah\Fasttrack;
 
 use Illuminate\Support\Facades\File;
+use TRegx\CleanRegex\Match\Details\Detail;
 use TRegx\CleanRegex\Pattern;
 use ReflectionClass;
 
@@ -39,23 +40,25 @@ class Mapper{
         $modelRelationships = [];
         foreach ($otherModels as $modelToCompare) {
             foreach($this->relationships as $relationType){
-                $matches = $this->patternBuilder($relationType , $modelToCompare)->match($fileContent)->all();
-                
-                $matches = array_filter($matches, function($match){
-                    return strlen($match) !== 0;
-                });
-                $relations = array_map(function($relationName) use ($model, $modelToCompare, $relationType){
-                    return new Relation($model, $modelToCompare, $relationType, $relationName);
-                }, $matches);
+                $relations = $this->patternBuilder($relationType , $modelToCompare)->match($fileContent)
+                    ->stream()
+                    ->filter(function (Detail $detail) {
+                        return $detail->textLength() > 0;
+                    })
+                    ->map(function (string $relationName) use ($model, $modelToCompare, $relationType) {
+                        return new Relation($model, $modelToCompare, $relationType, $relationName);
+                    })
+                    ->all();
 
-                $matchesWithClass = $this->patternBuilder($relationType , $modelToCompare, true)->match($fileContent)->all();
-
-                $matchesWithClass = array_filter($matchesWithClass, function($match){
-                    return strlen($match) !== 0;
-                });
-                $relationsWithClass = array_map(function($relationName) use ($model, $modelToCompare, $relationType){
-                    return new Relation($model, $modelToCompare, $relationType, $relationName);
-                }, $matchesWithClass);
+                $relationsWithClass = $this->patternBuilder($relationType , $modelToCompare, true)->match($fileContent)
+                    ->stream()
+                    ->filter(function (Detail $detail) {
+                        return $detail->textLength() > 0;
+                    })
+                    ->map(function(string $relationName) use ($model, $modelToCompare, $relationType){
+                        return new Relation($model, $modelToCompare, $relationType, $relationName);
+                    })
+                    ->all();
 
                 $relations = array_merge( $relations , $relationsWithClass );
 
