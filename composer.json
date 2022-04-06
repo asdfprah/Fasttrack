@@ -12,10 +12,10 @@
         }
     ],
     "minimum-stability": "dev",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "require": {
         "rawr/t-regx": "^0.19.0",
-        "doctrine/dbal": "^3.3.0",
+        "doctrine/dbal": "^3.0",
         "spatie/laravel-query-builder": ">=4.0.0"
     },
     "extra": {
