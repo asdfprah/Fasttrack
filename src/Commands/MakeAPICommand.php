@@ -51,7 +51,7 @@ class MakeAPICommand extends Command
      */
     public function handle()
     {
-        //$this->updateCache();   //no lo estoy usando xD
+        //$this->updateCache();   //not beign used 
 
         $models = $this->getModels();
         
@@ -70,7 +70,7 @@ class MakeAPICommand extends Command
 
             $routeSubPath = strtolower($shortName);
 
-            $routes = "\r\n\r\nRoute::controller( '\\App\\Http\\Controllers\\{$shortName}Controller' )->group( function(){\r\n    Route::get('{any}/{$routeSubPath}' , 'index' )->where('any','.*');\r\n    Route::get('{$routeSubPath}' , 'index' );\r\n    Route::get('{any}/{$routeSubPath}/{id}' , 'show')->where('any', '.*');\r\n    Route::get('{$routeSubPath}/{id}' , 'show');\r\n    Route::post('{$routeSubPath}', 'store');\r\n    Route::put('{$routeSubPath}/{id}', 'update');\r\n    Route::delete('{$routeSubPath}/{id}', 'destroy');\r\n});";
+            $routes = "\r\n\r\nRoute::controller( '\\App\\Http\\Controllers\\{$shortName}Controller' )->group( function(){\r\n    Route::get('{any}/{$routeSubPath}' , 'index' )->where('any','.*');\r\n    Route::get('{$routeSubPath}' , 'index' );\r\n    Route::get('{any}/{$routeSubPath}/{id}' , 'show')->where('any', '.*');\r\n    Route::get('{$routeSubPath}/{id}' , 'show');\r\n    Route::post('{$routeSubPath}', 'store');\r\n    Route::post('{any}/{$routeSubPath}' , 'store')->where('any', '.*');\r\n    Route::put('{$routeSubPath}/{id}', 'update');\r\n    Route::put('{any}/{$routeSubPath}/{id}' , 'update')->where('any', '.*');\r\n    Route::delete('{$routeSubPath}/{id}', 'destroy');\r\n    Route::delete('{any}/{$routeSubPath}/{id}' , 'destroy')->where('any', '.*');\r\n});";
 
             file_put_contents($path , $routes,  FILE_APPEND | LOCK_EX);
 

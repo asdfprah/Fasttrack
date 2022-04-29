@@ -16,6 +16,20 @@ use Asdfprah\Fasttrack\Fasttrack;
 class DummyCode:modelController extends Controller
 {
     /**
+     * Ignore "any" parameter added by Fasttrack in route file
+     *
+     * @return void
+     */ 
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) { 
+            /* retrieve the value a set to a controller property ... */; 
+            $request->route()->forgetParameter('any'); 
+            return $next($request);
+        });
+    }
+    
+    /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
