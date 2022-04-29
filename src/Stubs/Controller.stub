@@ -23,7 +23,6 @@ class DummyCode:modelController extends Controller
     public function __construct()
     {
         $this->middleware(function ($request, $next) { 
-            /* retrieve the value a set to a controller property ... */; 
             $request->route()->forgetParameter('any'); 
             return $next($request);
         });
