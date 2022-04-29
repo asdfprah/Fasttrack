@@ -2,16 +2,23 @@
 
 namespace Asdfprah\Fasttrack;
 
+use Exception;
 use Illuminate\Support\Facades\File;
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use ReflectionClass;
 
 class Fasttrack{
+    /**
+     * Find all classes declared of a given type inside the Laravel app folder
+     * 
+     * @param string $className class type to find
+     * @param boolean $returnFiles=false indicated if the method should return the files. If false it only return the full class name
+     * @return \Illuminate\Support\Collection
+     */
     public function findByClass($className, $returnFiles = false):Collection {
         $classes = collect(File::allFiles(app_path()))
             ->map(function ($item) {
@@ -38,10 +45,22 @@ class Fasttrack{
         }) : $classes->values();
     }
     
+    /**
+     * Return a collection of all existent models inside the Laravel app folder
+     * 
+     * @return \Illuminate\Support\Collection
+     */
     public function models():Collection{
         return $this->findByClass(Model::class);
     }
   
+
+    /**
+     * Make a query based on the requested route, if a relation could not be resolved
+     * abort the navigation with 404 error
+     * 
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
     public function getQuery(){
         $path = $this->getRequestPath();
         $query = (new ($this->guessModel( $path[ array_key_first($path) ] ) ) )->query() ;
@@ -60,19 +79,35 @@ class Fasttrack{
         return $query;
     }
 
-    public function getRequestPath(){
+    /**
+     * Retrieves the request path removing the configured excluded sections
+     * 
+     * @return array
+     */
+    private function getRequestPath(){
         $sections = explode("/", request()->path()  );
         array_map('strtolower', $sections);
         return array_values( $this->removeExcluded( $sections ) ) ;
     }
 
-    private function removeExcluded($path){
+    /**
+     * Removes the fasttrack excluded path sections from a array
+     * 
+     * @param $path array of request url sections 
+     * @return array
+     */
+    private function removeExcluded(array $path){
         $excluded = config('fasttrack.exclude');
         return array_filter( $path, function( $subSection ) use ($excluded) {
             return ! in_array( $subSection , $excluded );
         } );  
     }
 
+    /**
+     * Guess the model based on a string with the model name
+     * 
+     * @return string matched model full class name
+     */
     private function guessModel($name){
         $models = $this->models();
         $match = null;
@@ -84,19 +119,20 @@ class Fasttrack{
                 break;
             }
         }
+        if(is_null($match)){
+            throw new Exception("Could not find a matching model for $name", 404);
+        }
         return $match;
     }
 
-    public function updateCache( $models = null ){
-        if( Cache::has('fasttrack') ){
-            Cache::forget( 'fasttrack' );
-        }
-        $models = is_null( $models ) ? $this->models() : $models;
-        $mapper = new Mapper( $models );
-        Cache::forever( 'fasttrack' , $mapper->getRelationshipMap() );
-    }
-
-    private function resolveRelation($subject , $relation){
+    /**
+     * Resolves a relation for a given subject
+     * 
+     * @param \Illuminate\Database\Eloquent\Model $subject where the relation is searched
+     * @param string $relation method name for the relation
+     * @return \Illuminate\Database\Eloquent\Builder;
+     */
+    private function resolveRelation(Model $subject , string $relation){
         if( method_exists($subject, $relation) ){
             return $subject->$relation();
         }

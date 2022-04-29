@@ -9,8 +9,9 @@ use Illuminate\Support\Facades\Artisan;
 class MakeAPICommand extends Command
 {
     /**
+     * Colelction of working models
      * 
-     * 
+     * @var \Illuminate\Support\Collection
      */
     protected $models;
 
@@ -26,7 +27,7 @@ class MakeAPICommand extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Creates routes, request and controller for a given model';
 
     /**
      * Create a new command instance.
@@ -39,11 +40,6 @@ class MakeAPICommand extends Command
         parent::__construct();
     }
 
-
-    protected function updateCache(){
-        (new Fasttrack)->updateCache( $this->models );
-    }
-
     /**
      * Execute the console command.
      *
@@ -51,8 +47,6 @@ class MakeAPICommand extends Command
      */
     public function handle()
     {
-        //$this->updateCache();   //not beign used 
-
         $models = $this->getModels();
         
         foreach ($models as $model) {

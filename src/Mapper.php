@@ -5,16 +5,12 @@ namespace Asdfprah\Fasttrack;
 use Illuminate\Support\Facades\File;
 use TRegx\CleanRegex\Pattern;
 use ReflectionClass;
-
+use Illuminate\Support\Collection;
 class Mapper{
 
     protected $models;
     protected $relationships;
     private $relationshipMap;
-
-    public function getRelationshipMap(){
-        return $this->relationshipMap;
-    }
 
     public function __construct($models){
         $this->relationshipMap = [];
@@ -23,13 +19,31 @@ class Mapper{
         $this->mapModelsRelationships($models);
     }
 
-    private function mapModelsRelationships($models){
+    /**
+     * Return the builded relationship map
+     * @return array
+     * @return void
+     */
+    public function getRelationshipMap(){
+        return $this->relationshipMap;
+    }
+
+    /**
+     * Map the relation of a model class
+     * @param \Illuminate\Support\Collection $models
+     * @return void
+     */
+    private function mapModelsRelationships(Collection $models){
         foreach($models as $model){
             $this->mapRelationshipsForModel($model);
         }
     }
 
-    private function mapRelationshipsForModel($model){
+    /**
+     * Map the relations for a given model
+     * @param string $model model full classname
+     */
+    private function mapRelationshipsForModel(string $model){
         $reflection = new ReflectionClass( $model );
         $fileContent = str_replace(["\n", "\r", "\t"], " ", File::get( $reflection->getFileName() ));
         $otherModels = $this->models->filter(function($item) use ($model){
@@ -69,7 +83,15 @@ class Mapper{
         $this->relationshipMap[$model] = $modelRelationships;
     }
 
-    private function patternBuilder($relationName, $model, $shortName = false){
+    /**
+     * Build a regexp pattern to match a given a relation
+     * 
+     * @param string $relationName name of the relation Eg: hasMany
+     * @param string $model model classname
+     * @param bool $shortName Indicates if the pattern uses the ::class shorthand
+     * @return \TRegx\CleanRegex\Pattern
+     */
+    private function patternBuilder(string $relationName, string $model, bool $shortName = false){
         if($shortName){
             $exploded = explode('\\', $model);
             $model = end($exploded);
@@ -82,7 +104,14 @@ class Mapper{
         return Pattern::of("\w*(?= *\( *\) *\{.*".$relationName."\( *\t*".$model.")");
     }
 
-    public function modelHasRelationship($model, $relationName){
+    /**
+     * Check if a given model classname has a given relatiom
+     * 
+     * @param string $model model classname
+     * @param string $relationName name of the relation method
+     * @return bool 
+     */
+    public function modelHasRelationship(string $model, string $relationName){
         $relations = $this->relationshipMap[$model];
         foreach ($relations as $relation) {
             if($relation->getRelationName() === $relationName){
