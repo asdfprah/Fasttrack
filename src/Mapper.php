@@ -31,10 +31,10 @@ class Mapper{
 
     /**
      * Map the relation of a model class
-     * @param \Illuminate\Support\Collection $models
+     * @param array $models
      * @return void
      */
-    private function mapModelsRelationships(Collection $models){
+    private function mapModelsRelationships(array $models){
         foreach($models as $model){
             $this->mapRelationshipsForModel($model);
         }
