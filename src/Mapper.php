@@ -104,7 +104,7 @@ class Mapper{
             $model = substr( $model, 2 , strlen($model) );
             $model = "'".$model."'";
         }
-        return Pattern::of("\w*(?= *\( *\) *\{.*".$relationName."\( *\t*".$model.")");
+        return Pattern::inject("\w*(?= *\( *\) *\{.*@\( *\t*@)", [$relationName, $model]);
     }
 
     /**
