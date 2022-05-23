@@ -1,5 +1,7 @@
 {
     "name": "asdfprah/fasttrack",
+    "description": "Easily build API with Laravel Framework",
+    "license": "MIT",
     "autoload": {
         "psr-4": {
             "Asdfprah\\Fasttrack\\": "src/"
