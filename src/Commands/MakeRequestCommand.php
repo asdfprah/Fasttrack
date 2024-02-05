@@ -53,6 +53,7 @@ class MakeRequestCommand extends FasttrackCommand
         $rules = "";
         $count = 0;
         foreach ($description as $column => $columnDescription) {
+            if self::shouldBeIgnored($model->getTable(), $column) { continue; }
             if( $columnDescription["isPrimaryKey"] ){ continue; }
 
             $lineBreak="\r\n            "; 
@@ -118,4 +119,14 @@ class MakeRequestCommand extends FasttrackCommand
         return "App\\Models\\".$modelName;   
     }
 
+    /**
+     * Check if a given column is ignored by user config
+     * 
+     * @param string $table database table name
+     * @param string $column database table column
+     * @return boolean
+     */
+    protected function shouldBeIgnored( string $table, string $column){
+        return in_array(config('fasttrack.ignored_columns'), "*.$column") || in_array(config('fasttrack.ignored_columns'), "$table.$column") 
+    }
 }
