@@ -49,11 +49,12 @@ class MakeRequestCommand extends FasttrackCommand
 
 
     protected function getRulesCode( $model ){
-        $description = Describer::describe( new $model );
+        $modelInstance = new $model;
+        $description = Describer::describe( $modelInstance );
         $rules = "";
         $count = 0;
         foreach ($description as $column => $columnDescription) {
-            if self::shouldBeIgnored($model->getTable(), $column) { continue; }
+            if( $this->shouldBeIgnored($modelInstance->getTable(), $column) ){ continue; }
             if( $columnDescription["isPrimaryKey"] ){ continue; }
 
             $lineBreak="\r\n            "; 
@@ -127,6 +128,7 @@ class MakeRequestCommand extends FasttrackCommand
      * @return boolean
      */
     protected function shouldBeIgnored( string $table, string $column){
-        return in_array(config('fasttrack.ignored_columns'), "*.$column") || in_array(config('fasttrack.ignored_columns'), "$table.$column") 
+        $ignored = config('fasttrack.ignored_columns');
+        return in_array("*.$column", $ignored) || in_array("$table.$column", $ignored);
     }
 }

@@ -10,9 +10,10 @@ return [
         'belongsToMany',
         'hasOneThrough', 
         'hasManyThrough', 
-        'morphOne', 
-        'morphMany', 
-        'morphToMany', 
+        'morphOne',
+        'morphMany',
+        'morphTo',
+        'morphToMany',
         'morphedByMany'
     ],
 ];

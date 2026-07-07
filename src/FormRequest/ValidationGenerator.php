@@ -14,8 +14,8 @@ class ValidationGenerator{
     }
 
     public function generate($description){
-        $this->addRequiredRule( $description["isNullable"] || $description["hasDefaultValue"] || $description["hasAutoIncrement"] );
-        $this->addTypeRule($description["type"]);
+        $this->addRequiredRule( !$description["isNullable"] && !$description["hasDefaultValue"] && !$description["hasAutoIncrement"] );
+        $this->addTypeRule($description["type"], $description["rawType"] ?? $description["type"]);
         $this->addLengthRule( $description["length"] );
         if($description["isForeign"]){
             $this->addExistsRule($description["foreign"]);
@@ -44,46 +44,88 @@ class ValidationGenerator{
         $this->addRule("required");
     }
 
-    private function addTypeRule(string $type){
+    /**
+     * Maps a database column type to a Laravel validation rule.
+     *
+     * Native type names aren't consistent across drivers: MySQL/SQLite report SQL-ish
+     * names ("bigint", "smallint", "double"), while Postgres reports its own internal
+     * aliases ("int8", "int2", "float8", "bool") for the very same kind of column. Both
+     * families are listed here side by side.
+     *
+     * @param string $type base type name reported by the DB driver (e.g. "varchar", "int8")
+     * @param string $rawType full type definition (e.g. "tinyint(1)"), used to tell a MySQL
+     *   boolean (tinyint(1)) apart from an actual small integer column (tinyint(3), etc.)
+     */
+    private function addTypeRule(string $type, string $rawType = ''){
         switch ($type) {
             case 'bigint':
+            case 'int':
+            case 'integer':
+            case 'mediumint':
+            case 'int2':
+            case 'int4':
+            case 'int8':
+            case 'year':
                 $this->addRule("integer");
                 break;
-            case 'binary':
+            case 'tinyint':
+            case 'bit':
+                $this->addRule( str_contains($rawType, '(1)') ? "boolean" : "integer" );
                 break;
+            case 'binary':
+            case 'varbinary':
             case 'blob':
+            case 'tinyblob':
+            case 'mediumblob':
+            case 'longblob':
                 break;
             case 'boolean':
+            case 'bool':
                 $this->addRule("boolean");
                 break;
             case 'date':
                 $this->addRule("date");
                 break;
             case 'datetime':
+            case 'timestamp':
                 $this->addRule("date_format:Y-m-d H:i:s");
                 break;
             case 'decimal':
+            case 'numeric':
                 $this->addRule("numeric");
                 break;
             case 'float':
+            case 'double':
+            case 'float4':
+            case 'float8':
                 $this->addRule("numeric");
-                break;
-            case 'integer':
-                $this->addRule("integer");
-                break;
-            case 'simple_array':
                 break;
             case 'smallint':
                 $this->addRule("integer");
                 break;
+            case 'char':
+            case 'varchar':
             case 'string':
+            case 'set':
                 $this->addRule("string");
                 break;
             case 'text':
+            case 'mediumtext':
+            case 'longtext':
                 $this->addRule("string");
                 break;
             case 'time':
                 $this->addRule("date_format:H:i");
+                break;
+            case 'json':
+            case 'jsonb':
+                $this->addRule("json");
+                break;
+            case 'enum':
+                $this->addRule("string");
+                break;
+            case 'uuid':
+                $this->addRule("uuid");
                 break;
         }
     }
