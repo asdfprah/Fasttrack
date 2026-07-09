@@ -5,6 +5,9 @@ namespace Asdfprah\Fasttrack\Providers;
 use Asdfprah\Fasttrack\Commands\MakeAPICommand;
 use Asdfprah\Fasttrack\Commands\MakeControllerCommand;
 use Asdfprah\Fasttrack\Commands\MakeRequestCommand;
+use Asdfprah\Fasttrack\Commands\SchemaCommand;
+use Asdfprah\Fasttrack\SchemaExporter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 
@@ -33,8 +36,15 @@ class FasttrackServiceProvider extends ServiceProvider
             $this->commands([
                 MakeRequestCommand::class,
                 MakeControllerCommand::class,
-                MakeAPICommand::class
+                MakeAPICommand::class,
+                SchemaCommand::class,
             ]);
+        }
+
+        if (config('fasttrack.expose_schema_route')) {
+            Route::get(config('fasttrack.schema_route_path', 'api/_schema'), function () {
+                return response()->json(SchemaExporter::build());
+            });
         }
 
         $srcPath = $this->getSrcPath();
