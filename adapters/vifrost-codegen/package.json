@@ -4,18 +4,27 @@
   "description": "Generates typed @vifrost/client Model subclasses from a Laravel Vifrost schema JSON export.",
   "type": "module",
   "bin": {
-    "vifrost-codegen": "./dist/cli.js"
+    "vifrost-codegen": "dist/cli.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "keywords": ["laravel", "vifrost", "codegen", "typescript"],
+  "keywords": [
+    "laravel",
+    "vifrost",
+    "codegen",
+    "typescript"
+  ],
   "license": "MIT",
   "dependencies": {
     "commander": "^12.0.0"
