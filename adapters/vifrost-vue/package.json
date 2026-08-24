@@ -15,11 +15,11 @@
   "keywords": ["laravel", "vifrost", "vue", "composables"],
   "license": "MIT",
   "peerDependencies": {
-    "@vifrost/client": "*",
+    "@vifrost/client": "^0.1.0",
     "vue": "^3.3.0"
   },
   "devDependencies": {
-    "@vifrost/client": "*",
+    "@vifrost/client": "^0.1.0",
     "vue": "^3.5.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0",
