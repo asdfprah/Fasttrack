@@ -1,0 +1,105 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        laravel:
+          - version: '^12.0'
+            testbench: '^10.0'
+          - version: '^13.0'
+            testbench: '^11.1'
+        database: [sqlite, mysql, mariadb, pgsql]
+
+    name: Laravel ${{ matrix.laravel.version }} - ${{ matrix.database }}
+
+    # All three DB services run in every job (cheap, avoids brittle conditional
+    # service blocks); TEST_DB_CONNECTION below picks which one the "testing"
+    # connection actually uses for this leg (see tests/TestCase.php). Native schema
+    # introspection reports different type-name conventions per driver, so the whole
+    # suite runs once per driver instead of only ever exercising SQLite.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: vifrost_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -uroot -psecret"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: secret
+          MARIADB_DATABASE: vifrost_test
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd="mariadb-admin ping -h localhost -uroot -psecret"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: vifrost_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      TEST_DB_CONNECTION: ${{ matrix.database }}
+      MYSQL_TEST_HOST: 127.0.0.1
+      MYSQL_TEST_PORT: 3306
+      MYSQL_TEST_DATABASE: vifrost_test
+      MYSQL_TEST_USERNAME: root
+      MYSQL_TEST_PASSWORD: secret
+      MARIADB_TEST_HOST: 127.0.0.1
+      MARIADB_TEST_PORT: 3307
+      MARIADB_TEST_DATABASE: vifrost_test
+      MARIADB_TEST_USERNAME: root
+      MARIADB_TEST_PASSWORD: secret
+      PGSQL_TEST_HOST: 127.0.0.1
+      PGSQL_TEST_PORT: 5432
+      PGSQL_TEST_DATABASE: vifrost_test
+      PGSQL_TEST_USERNAME: postgres
+      PGSQL_TEST_PASSWORD: secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo_sqlite, pdo_mysql, pdo_pgsql, mbstring, bcmath, zip
+          coverage: none
+
+      - name: Require the matrix Laravel/Testbench versions
+        run: |
+          composer require "illuminate/database:${{ matrix.laravel.version }}" "illuminate/support:${{ matrix.laravel.version }}" "illuminate/container:${{ matrix.laravel.version }}" "illuminate/console:${{ matrix.laravel.version }}" --no-update
+          composer require "orchestra/testbench:${{ matrix.laravel.testbench }}" --dev --no-update
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Run tests
+        run: vendor/bin/pest

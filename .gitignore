@@ -1,1 +1,8 @@
 /vendor
+/testbed
+/.phpunit.cache
+composer.lock
+
+# adapters/ (npm workspaces: vifrost-client, vifrost-codegen, vifrost-vue)
+node_modules/
+dist/

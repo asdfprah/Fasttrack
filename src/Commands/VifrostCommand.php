@@ -1,10 +1,10 @@
 <?php
 
-namespace Asdfprah\Fasttrack\Commands;
+namespace Vifrost\Laravel\Commands;
 
 use Illuminate\Console\GeneratorCommand;
 
-abstract class FasttrackCommand extends GeneratorCommand
+abstract class VifrostCommand extends GeneratorCommand
 {
     /**
      * Get the stub file for the generator.

@@ -1,0 +1,75 @@
+/** Mirrors `Vifrost\Laravel\SchemaExporter::foreignFor()` in the Laravel package. */
+export interface VifrostForeignKey {
+  table: string
+  column: string | null
+}
+
+/** Mirrors `Vifrost\Laravel\SchemaExporter::attributesFor()` in the Laravel package. */
+export interface VifrostAttribute {
+  type: string
+  rawType: string
+  length: number | null
+  isNullable: boolean
+  isPrimaryKey: boolean
+  hasAutoIncrement: boolean
+  hasDefaultValue: boolean
+  defaultValue: unknown
+  isForeign: boolean
+  foreign: VifrostForeignKey | null
+}
+
+/**
+ * `type` is the Eloquent relation class basename (`HasMany`, `BelongsTo`,
+ * `HasOne`, `BelongsToMany`, `HasOneThrough`, `HasManyThrough`, `MorphOne`,
+ * `MorphMany`, `MorphTo`, `MorphToMany`, `MorphedByMany`) — see
+ * `Vifrost\Laravel\Relation::getRelationType()`.
+ */
+export interface VifrostRelation {
+  type: string
+  related: string | null
+  polymorphic: boolean
+}
+
+export interface VifrostModelSchema {
+  table: string
+  primaryKey: string
+  resource: string
+  /**
+   * The effective max row count a collection query for this model is allowed to
+   * request, from `config('vifrost.max_limit_per_model')` or the global
+   * `config('vifrost.max_limit')` — see `Vifrost\Laravel\Pagination::maxLimitFor()`.
+   * `null` means the model is exempt from pagination entirely.
+   */
+  maxLimit: number | null
+  attributes: Record<string, VifrostAttribute>
+  relations: Record<string, VifrostRelation>
+}
+
+export interface VifrostSchema {
+  schemaVersion: number
+  models: Record<string, VifrostModelSchema>
+}
+
+/** A generated TypeScript type expression, e.g. `"string"`, `"number | null"`. */
+export type TsTypeName = string
+
+export interface TypeMapOptions {
+  /** Per-native-type-name overrides, merged on top of `DEFAULT_TYPE_MAP`. */
+  overrides?: Record<string, TsTypeName>
+}
+
+export interface GenerateOptions extends TypeMapOptions {
+  /** Import specifier used for the runtime client. Defaults to `"@vifrost/client"`. */
+  clientImport?: string
+}
+
+export interface GeneratedFile {
+  fileName: string
+  content: string
+}
+
+export interface RelationMethod {
+  code: string
+  /** The related class to import, or `null` if none is generated. */
+  importName: string | null
+}

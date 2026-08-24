@@ -1,6 +1,6 @@
 <?php
 
-namespace Asdfprah\Fasttrack;
+namespace Vifrost\Laravel;
 
 class Relation{
 
