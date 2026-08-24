@@ -1,15 +1,15 @@
 {
-    "name": "asdfprah/fasttrack",
+    "name": "vifrost/laravel",
     "description": "Easily build API with Laravel Framework",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Asdfprah\\Fasttrack\\": "src/"
+            "Vifrost\\Laravel\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Asdfprah\\Fasttrack\\Tests\\": "tests/"
+            "Vifrost\\Laravel\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -29,7 +29,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Asdfprah\\Fasttrack\\Providers\\FasttrackServiceProvider"
+                "Vifrost\\Laravel\\Providers\\VifrostServiceProvider"
             ]
         }
     },

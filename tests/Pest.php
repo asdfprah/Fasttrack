@@ -1,13 +1,13 @@
 <?php
 
-use Asdfprah\Fasttrack\Tests\TestCase;
+use Vifrost\Laravel\Tests\TestCase;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 uses(TestCase::class)->in('Unit');
 
 /**
- * Schema shared by the Describer/Mapper/Fasttrack tests: a Category hasMany Products,
+ * Schema shared by the Describer/Mapper/Vifrost tests: a Category hasMany Products,
  * a Product belongsTo Category and morphMany Comments, a Comment morphTo commentable.
  */
 function createTestSchema(): void

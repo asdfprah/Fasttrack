@@ -30,7 +30,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: secret
-          MYSQL_DATABASE: fasttrack_test
+          MYSQL_DATABASE: vifrost_test
         ports:
           - 3306:3306
         options: >-
@@ -43,7 +43,7 @@ jobs:
         image: mariadb:11
         env:
           MARIADB_ROOT_PASSWORD: secret
-          MARIADB_DATABASE: fasttrack_test
+          MARIADB_DATABASE: vifrost_test
         ports:
           - 3307:3306
         options: >-
@@ -56,7 +56,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_PASSWORD: secret
-          POSTGRES_DB: fasttrack_test
+          POSTGRES_DB: vifrost_test
         ports:
           - 5432:5432
         options: >-
@@ -69,17 +69,17 @@ jobs:
       TEST_DB_CONNECTION: ${{ matrix.database }}
       MYSQL_TEST_HOST: 127.0.0.1
       MYSQL_TEST_PORT: 3306
-      MYSQL_TEST_DATABASE: fasttrack_test
+      MYSQL_TEST_DATABASE: vifrost_test
       MYSQL_TEST_USERNAME: root
       MYSQL_TEST_PASSWORD: secret
       MARIADB_TEST_HOST: 127.0.0.1
       MARIADB_TEST_PORT: 3307
-      MARIADB_TEST_DATABASE: fasttrack_test
+      MARIADB_TEST_DATABASE: vifrost_test
       MARIADB_TEST_USERNAME: root
       MARIADB_TEST_PASSWORD: secret
       PGSQL_TEST_HOST: 127.0.0.1
       PGSQL_TEST_PORT: 5432
-      PGSQL_TEST_DATABASE: fasttrack_test
+      PGSQL_TEST_DATABASE: vifrost_test
       PGSQL_TEST_USERNAME: postgres
       PGSQL_TEST_PASSWORD: secret
 

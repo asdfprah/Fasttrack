@@ -1,0 +1,385 @@
+{
+    "schemaVersion": 1,
+    "models": {
+        "App\\Models\\Category": {
+            "table": "categories",
+            "primaryKey": "id",
+            "resource": "category",
+            "attributes": {
+                "id": {
+                    "type": "bigint",
+                    "rawType": "bigint unsigned",
+                    "length": null,
+                    "isNullable": false,
+                    "isPrimaryKey": true,
+                    "hasAutoIncrement": true,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "name": {
+                    "type": "varchar",
+                    "rawType": "varchar(120)",
+                    "length": 120,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "created_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "updated_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                }
+            },
+            "relations": {
+                "products": {
+                    "type": "HasMany",
+                    "related": "App\\Models\\Product",
+                    "polymorphic": false
+                }
+            },
+            "maxLimit": 100
+        },
+        "App\\Models\\Comment": {
+            "table": "comments",
+            "primaryKey": "id",
+            "resource": "comment",
+            "attributes": {
+                "id": {
+                    "type": "bigint",
+                    "rawType": "bigint unsigned",
+                    "length": null,
+                    "isNullable": false,
+                    "isPrimaryKey": true,
+                    "hasAutoIncrement": true,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "commentable_type": {
+                    "type": "varchar",
+                    "rawType": "varchar(255)",
+                    "length": 255,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "commentable_id": {
+                    "type": "bigint",
+                    "rawType": "bigint unsigned",
+                    "length": null,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "body": {
+                    "type": "varchar",
+                    "rawType": "varchar(255)",
+                    "length": 255,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "created_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "updated_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                }
+            },
+            "relations": {
+                "commentable": {
+                    "type": "MorphTo",
+                    "related": null,
+                    "polymorphic": true
+                }
+            },
+            "maxLimit": 100
+        },
+        "App\\Models\\Product": {
+            "table": "products",
+            "primaryKey": "id",
+            "resource": "product",
+            "attributes": {
+                "id": {
+                    "type": "bigint",
+                    "rawType": "bigint unsigned",
+                    "length": null,
+                    "isNullable": false,
+                    "isPrimaryKey": true,
+                    "hasAutoIncrement": true,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "category_id": {
+                    "type": "bigint",
+                    "rawType": "bigint unsigned",
+                    "length": null,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": true,
+                    "foreign": {
+                        "table": "categories",
+                        "column": "id"
+                    }
+                },
+                "name": {
+                    "type": "varchar",
+                    "rawType": "varchar(200)",
+                    "length": 200,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "price": {
+                    "type": "decimal",
+                    "rawType": "decimal(8,2)",
+                    "length": null,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "description": {
+                    "type": "text",
+                    "rawType": "text",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "status": {
+                    "type": "varchar",
+                    "rawType": "varchar(20)",
+                    "length": 20,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": true,
+                    "defaultValue": "draft",
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "created_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "updated_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                }
+            },
+            "relations": {
+                "category": {
+                    "type": "BelongsTo",
+                    "related": "App\\Models\\Category",
+                    "polymorphic": false
+                },
+                "comments": {
+                    "type": "MorphMany",
+                    "related": "App\\Models\\Comment",
+                    "polymorphic": false
+                }
+            },
+            "maxLimit": 100
+        },
+        "App\\Models\\User": {
+            "table": "users",
+            "primaryKey": "id",
+            "resource": "user",
+            "attributes": {
+                "id": {
+                    "type": "bigint",
+                    "rawType": "bigint unsigned",
+                    "length": null,
+                    "isNullable": false,
+                    "isPrimaryKey": true,
+                    "hasAutoIncrement": true,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "name": {
+                    "type": "varchar",
+                    "rawType": "varchar(255)",
+                    "length": 255,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "email": {
+                    "type": "varchar",
+                    "rawType": "varchar(255)",
+                    "length": 255,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "email_verified_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "password": {
+                    "type": "varchar",
+                    "rawType": "varchar(255)",
+                    "length": 255,
+                    "isNullable": false,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "remember_token": {
+                    "type": "varchar",
+                    "rawType": "varchar(100)",
+                    "length": 100,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "created_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                },
+                "updated_at": {
+                    "type": "timestamp",
+                    "rawType": "timestamp",
+                    "length": null,
+                    "isNullable": true,
+                    "isPrimaryKey": false,
+                    "hasAutoIncrement": false,
+                    "hasDefaultValue": false,
+                    "defaultValue": null,
+                    "isForeign": false,
+                    "foreign": null
+                }
+            },
+            "relations": {
+                "notifications": {
+                    "type": "MorphMany",
+                    "related": "Illuminate\\Notifications\\DatabaseNotification",
+                    "polymorphic": false
+                }
+            },
+            "maxLimit": 100
+        }
+    }
+}

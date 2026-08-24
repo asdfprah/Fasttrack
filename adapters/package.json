@@ -1,0 +1,13 @@
+{
+  "name": "vifrost-adapters",
+  "private": true,
+  "workspaces": [
+    "vifrost-client",
+    "vifrost-codegen",
+    "vifrost-vue"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces"
+  }
+}

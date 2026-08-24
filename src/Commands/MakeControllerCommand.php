@@ -1,20 +1,20 @@
 <?php
 
-namespace Asdfprah\Fasttrack\Commands;
+namespace Vifrost\Laravel\Commands;
 
-use Asdfprah\Fasttrack\Commands\FasttrackCommand;
-use Asdfprah\Fasttrack\Mapper;
+use Vifrost\Laravel\Commands\VifrostCommand;
+use Vifrost\Laravel\Mapper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
-class MakeControllerCommand extends FasttrackCommand
+class MakeControllerCommand extends VifrostCommand
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'fasttrack:controller {model} {--force}';
+    protected $signature = 'vifrost:controller {model} {--force}';
 
     /**
      * The console command description.

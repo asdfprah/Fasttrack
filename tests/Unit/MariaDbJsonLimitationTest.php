@@ -1,8 +1,8 @@
 <?php
 
-use Asdfprah\Fasttrack\Describer;
-use Asdfprah\Fasttrack\FormRequest\ValidationGenerator;
-use Asdfprah\Fasttrack\Tests\Fixtures\MariaDbProduct;
+use Vifrost\Laravel\Describer;
+use Vifrost\Laravel\FormRequest\ValidationGenerator;
+use Vifrost\Laravel\Tests\Fixtures\MariaDbProduct;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 

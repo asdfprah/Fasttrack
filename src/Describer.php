@@ -1,6 +1,6 @@
 <?php
 
-namespace Asdfprah\Fasttrack;
+namespace Vifrost\Laravel;
 
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;

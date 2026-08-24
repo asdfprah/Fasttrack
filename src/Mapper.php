@@ -1,6 +1,6 @@
 <?php
 
-namespace Asdfprah\Fasttrack;
+namespace Vifrost\Laravel;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -18,7 +18,7 @@ class Mapper{
 
     public function __construct($models){
         $this->relationshipMap = [];
-        $this->relationMethods = config('fasttrack.relations');
+        $this->relationMethods = config('vifrost.relations');
         $this->mapModelsRelationships($models);
     }
 
@@ -50,7 +50,7 @@ class Mapper{
      * is an Eloquent Relation instance.
      *
      * @param string $model model full classname
-     * @return \Asdfprah\Fasttrack\Relation[]
+     * @return \Vifrost\Laravel\Relation[]
      */
     private function discoverRelations(string $model):array{
         $instance = new $model;

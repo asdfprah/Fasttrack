@@ -1,17 +1,17 @@
 <?php
 
-namespace Asdfprah\Fasttrack\Providers;
+namespace Vifrost\Laravel\Providers;
 
-use Asdfprah\Fasttrack\Commands\MakeAPICommand;
-use Asdfprah\Fasttrack\Commands\MakeControllerCommand;
-use Asdfprah\Fasttrack\Commands\MakeRequestCommand;
-use Asdfprah\Fasttrack\Commands\SchemaCommand;
-use Asdfprah\Fasttrack\SchemaExporter;
+use Vifrost\Laravel\Commands\MakeAPICommand;
+use Vifrost\Laravel\Commands\MakeControllerCommand;
+use Vifrost\Laravel\Commands\MakeRequestCommand;
+use Vifrost\Laravel\Commands\SchemaCommand;
+use Vifrost\Laravel\SchemaExporter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 
-class FasttrackServiceProvider extends ServiceProvider
+class VifrostServiceProvider extends ServiceProvider
 {
     /**
      * Register services.
@@ -21,7 +21,7 @@ class FasttrackServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(
-            $this->getSrcPath().'/Config/Fasttrack.php', 'fasttrack'
+            $this->getSrcPath().'/Config/Vifrost.php', 'vifrost'
         );
     }
 
@@ -41,15 +41,15 @@ class FasttrackServiceProvider extends ServiceProvider
             ]);
         }
 
-        if (config('fasttrack.expose_schema_route')) {
-            Route::get(config('fasttrack.schema_route_path', 'api/_schema'), function () {
+        if (config('vifrost.expose_schema_route')) {
+            Route::get(config('vifrost.schema_route_path', 'api/_schema'), function () {
                 return response()->json(SchemaExporter::build());
             });
         }
 
         $srcPath = $this->getSrcPath();
         $this->publishes([
-            $srcPath.'/Config/Fasttrack.php' => $this->configPath('fasttrack.php')
+            $srcPath.'/Config/Vifrost.php' => $this->configPath('vifrost.php')
         ], 'config');
     }
 

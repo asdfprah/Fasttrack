@@ -1,6 +1,6 @@
 <?php
 
-namespace Asdfprah\Fasttrack\FormRequest;
+namespace Vifrost\Laravel\FormRequest;
 
 class ValidationGenerator{
     private string $rules;

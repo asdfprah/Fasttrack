@@ -1,8 +1,8 @@
 <?php
 
-namespace Asdfprah\Fasttrack\Commands;
+namespace Vifrost\Laravel\Commands;
 
-use Asdfprah\Fasttrack\SchemaExporter;
+use Vifrost\Laravel\SchemaExporter;
 use Illuminate\Console\Command;
 
 class SchemaCommand extends Command
@@ -12,7 +12,7 @@ class SchemaCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'fasttrack:schema {--path=}';
+    protected $signature = 'vifrost:schema {--path=}';
 
     /**
      * The console command description.
@@ -30,7 +30,7 @@ class SchemaCommand extends Command
     {
         $schema = SchemaExporter::build();
 
-        $path = $this->option('path') ?: config('fasttrack.schema_path');
+        $path = $this->option('path') ?: config('vifrost.schema_path');
 
         file_put_contents($path, json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 

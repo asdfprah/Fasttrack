@@ -1,9 +1,9 @@
 <?php
 
-namespace Asdfprah\Fasttrack\Commands;
+namespace Vifrost\Laravel\Commands;
 
-use Asdfprah\Fasttrack\Fasttrack;
-use Asdfprah\Fasttrack\Mapper;
+use Vifrost\Laravel\Vifrost;
+use Vifrost\Laravel\Mapper;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 
@@ -21,7 +21,7 @@ class MakeAPICommand extends Command
      *
      * @var string
      */
-    protected $signature = 'fasttrack:api {model=all}';
+    protected $signature = 'vifrost:api {model=all}';
 
     /**
      * The console command description.
@@ -37,7 +37,7 @@ class MakeAPICommand extends Command
      */
     public function __construct()
     {
-        $this->models = (new Fasttrack)->models();
+        $this->models = (new Vifrost)->models();
         parent::__construct();
     }
 
@@ -55,11 +55,11 @@ class MakeAPICommand extends Command
 
             $shortName = end( $exploded );
 
-            Artisan::call("fasttrack:request Store{$shortName}Request {$shortName}");
+            Artisan::call("vifrost:request Store{$shortName}Request {$shortName}");
 
-            Artisan::call("fasttrack:request Update{$shortName}Request {$shortName}");
+            Artisan::call("vifrost:request Update{$shortName}Request {$shortName}");
 
-            Artisan::call("fasttrack:controller {$shortName}");
+            Artisan::call("vifrost:controller {$shortName}");
 
             $path = base_path('routes/api.php');
 
@@ -95,7 +95,7 @@ class MakeAPICommand extends Command
     /**
      * Read-only routes for each of the model's relations, exactly one hop deep: the
      * related model's own controller serves them, scoped by the parent's id (see
-     * Fasttrack::getQuery()). A relation of a relation isn't routed here at all —
+     * Vifrost::getQuery()). A relation of a relation isn't routed here at all —
      * that data is reachable in a single request via Spatie's dotted "include" query
      * param instead. MorphTo relations are skipped: they have no single fixed related
      * model to route to.

@@ -1,6 +1,6 @@
 <?php
 
-namespace Asdfprah\Fasttrack\Tests\Fixtures;
+namespace Vifrost\Laravel\Tests\Fixtures;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;

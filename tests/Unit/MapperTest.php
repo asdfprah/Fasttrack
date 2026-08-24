@@ -1,13 +1,13 @@
 <?php
 
-use Asdfprah\Fasttrack\Mapper;
-use Asdfprah\Fasttrack\Tests\Fixtures\Category;
-use Asdfprah\Fasttrack\Tests\Fixtures\Comment;
-use Asdfprah\Fasttrack\Tests\Fixtures\Product;
+use Vifrost\Laravel\Mapper;
+use Vifrost\Laravel\Tests\Fixtures\Category;
+use Vifrost\Laravel\Tests\Fixtures\Comment;
+use Vifrost\Laravel\Tests\Fixtures\Product;
 
 beforeEach(function () {
     createTestSchema();
-    config()->set('fasttrack.relations', [
+    config()->set('vifrost.relations', [
         'hasMany', 'hasOne', 'belongsTo', 'belongsToMany',
         'hasOneThrough', 'hasManyThrough', 'morphOne', 'morphMany',
         'morphTo', 'morphToMany', 'morphedByMany',

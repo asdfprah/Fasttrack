@@ -1,7 +1,7 @@
 <?php
 
-use Asdfprah\Fasttrack\Describer;
-use Asdfprah\Fasttrack\Tests\Fixtures\Product;
+use Vifrost\Laravel\Describer;
+use Vifrost\Laravel\Tests\Fixtures\Product;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(fn () => createTestSchema());
