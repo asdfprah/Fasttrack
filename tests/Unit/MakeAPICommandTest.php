@@ -40,9 +40,6 @@ it('leaves an existing routes/api.php untouched', function () {
 });
 
 it('registers the api routing entry in bootstrap/app.php when missing', function () {
-    // routes/api.php existing isn't enough on its own — a fresh Laravel 11+
-    // bootstrap/app.php has no `api:` entry in withRouting() either, so every
-    // route 404s until it's registered.
     $path = $this->tempDir . '/app.php';
     file_put_contents($path, <<<'PHP'
     <?php
