@@ -22,7 +22,7 @@ export class HttpClient {
       ...options.headers,
     }
 
-    const fetchImplementation = options.fetch ?? globalThis.fetch
+    const fetchImplementation = options.fetch ?? globalThis.fetch?.bind(globalThis)
     if (!fetchImplementation) {
       throw new Error('No fetch implementation available. Pass one via HttpClientOptions.fetch.')
     }

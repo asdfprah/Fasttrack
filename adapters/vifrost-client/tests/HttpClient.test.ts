@@ -71,6 +71,23 @@ describe('HttpClient', () => {
     expect(init.body).toBe(JSON.stringify({ name: 'Gadget' }))
   })
 
+  it('calls the default globalThis.fetch bound to globalThis, not detached', async () => {
+    const original = globalThis.fetch
+    globalThis.fetch = function (this: unknown) {
+      if (this !== globalThis) {
+        throw new TypeError("'fetch' called on an object that does not implement interface Window.")
+      }
+      return Promise.resolve(jsonResponse({ ok: true }))
+    } as typeof fetch
+
+    try {
+      const client = new HttpClient({ baseUrl: 'https://api.test' })
+      await expect(client.get('product')).resolves.toEqual({ ok: true })
+    } finally {
+      globalThis.fetch = original
+    }
+  })
+
   it('throws if no fetch implementation is available anywhere', () => {
     const original = globalThis.fetch
     // @ts-expect-error deliberately removing it to test the guard
