@@ -1,6 +1,9 @@
 import { client, getRegistry } from './config.js'
 import { QueryBuilder } from './QueryBuilder.js'
+import { buildQueryString, createQueryState } from './queryString.js'
 import type { ModelConstructor } from './types.js'
+
+const NO_INCLUDES: string[] = []
 
 /**
  * Base class generated `@vifrost/codegen` subclasses extend.
@@ -42,14 +45,32 @@ export class Model {
    * event can find and refresh it. Every fetch path (find/all/query/
    * relations) goes through this, so tracking is automatic whenever the
    * registry is in use, and entirely skipped otherwise.
+   *
+   * @param includes the `.with(...)` relations this row was originally
+   *   fetched with, if any — threaded through so the registered resync
+   *   function re-requests the same relations later, via the same
+   *   `query().with(...).whereId(id).first()` chain a caller would use
+   *   directly. Without this, a `Registry.resync()` triggered by a
+   *   real-time event would silently drop any eager-loaded relation: a
+   *   bare `find()` doesn't know to ask for it, and the resulting instance
+   *   falls back to exposing the relation-loader *method* itself (e.g.
+   *   `product.category`, a function) under the same property name, since
+   *   nothing overwrote it with data.
    */
-  static instantiate<T extends Model>(this: ModelConstructor<T>, attributes: Record<string, unknown>): T {
+  static instantiate<T extends Model>(
+    this: ModelConstructor<T>,
+    attributes: Record<string, unknown>,
+    includes: string[] = NO_INCLUDES
+  ): T {
     const instance = new this(attributes)
     const registry = getRegistry()
     const primaryKeyValue = attributes[this.primaryKey]
     if (registry && primaryKeyValue !== undefined && primaryKeyValue !== null) {
       registry.track(this.resource, primaryKeyValue as string | number, instance, () =>
-        this.find(primaryKeyValue as string | number)
+        this.query()
+          .with(...includes)
+          .whereId(primaryKeyValue as string | number)
+          .first() as Promise<T>
       )
     }
     return instance
@@ -68,11 +89,16 @@ export class Model {
   static query<T extends Model>(this: ModelConstructor<T>): QueryBuilder<T> {
     return new QueryBuilder<T>(
       this.resource,
-      async (path) => {
+      async (path, includes) => {
         const rows = await client().get<Record<string, unknown>[]>(path)
-        return rows.map((row) => this.instantiate(row))
+        return rows.map((row) => this.instantiate(row, includes))
       },
-      (id) => this.find(id),
+      async (id, includes) => {
+        const state = createQueryState()
+        state.includes = includes
+        const row = await client().get<Record<string, unknown>>(`${this.resource}/${id}${buildQueryString(state)}`)
+        return this.instantiate(row, includes)
+      },
       this.maxLimit
     )
   }
