@@ -50,10 +50,15 @@ class MakeAPICommand extends Command
     {
         $models = $this->getModels();
 
+        $path = base_path('routes/api.php');
+
+        $this->ensureApiRoutesFile($path);
+        $this->ensureApiRoutingRegistered(base_path('bootstrap/app.php'));
+
         foreach ($models as $model) {
             $exploded = explode('\\',  $model);
 
-            $shortName = end( $exploded );
+            $shortName = end($exploded);
 
             Artisan::call("vifrost:request Store{$shortName}Request {$shortName}");
 
@@ -61,18 +66,71 @@ class MakeAPICommand extends Command
 
             Artisan::call("vifrost:controller {$shortName}");
 
-            $path = base_path('routes/api.php');
-
             $routeSubPath = strtolower($shortName);
 
             $routes = $this->buildFlatRoutes($shortName, $routeSubPath);
             $routes .= $this->buildNestedRoutes($model, $routeSubPath);
 
-            file_put_contents($path , $routes,  FILE_APPEND | LOCK_EX);
-
+            file_put_contents($path, $routes,  FILE_APPEND | LOCK_EX);
         }
 
         return 0;
+    }
+
+    /**
+     * Ensures api routes file exists and has php tag
+     *
+     * @param string $path routes/api.php absolute path
+     * @return void
+     */
+    protected function ensureApiRoutesFile(string $path): void
+    {
+        if (file_exists($path)) {
+            return;
+        }
+
+        file_put_contents(
+            $path,
+            "<?php\r\n\r\nuse Illuminate\\Support\\Facades\\Route;\r\n",
+            LOCK_EX
+        );
+    }
+
+    /**
+     * Ensures api routes are registered
+     *
+     * @param string $path bootstrap/app.php absolute path
+     * @return void
+     */
+    protected function ensureApiRoutingRegistered(string $path): void
+    {
+        if (!file_exists($path)) {
+            return;
+        }
+
+        $content = file_get_contents($path);
+
+        if (str_contains($content, 'api:')) {
+            return;
+        }
+
+        $webRoutingLine = "web: __DIR__.'/../routes/web.php',";
+
+        if (!str_contains($content, $webRoutingLine)) {
+            $this->components->warn("Could not automatically register routes/api.php in [{$path}] — register it manually via withRouting(api: ...).");
+
+            return;
+        }
+
+        file_put_contents(
+            $path,
+            str_replace(
+                $webRoutingLine,
+                $webRoutingLine . PHP_EOL . "        api: __DIR__.'/../routes/api.php',",
+                $content
+            ),
+            LOCK_EX
+        );
     }
 
     /**
@@ -82,14 +140,15 @@ class MakeAPICommand extends Command
      * @param string $routeSubPath lowercased model name used as the URL segment
      * @return string
      */
-    protected function buildFlatRoutes(string $shortName, string $routeSubPath):string{
+    protected function buildFlatRoutes(string $shortName, string $routeSubPath): string
+    {
         return "\r\n\r\nRoute::controller( '\\App\\Http\\Controllers\\{$shortName}Controller' )->group( function(){\r\n"
-            ."    Route::get('{$routeSubPath}' , 'index' );\r\n"
-            ."    Route::get('{$routeSubPath}/{id}' , 'show');\r\n"
-            ."    Route::post('{$routeSubPath}', 'store');\r\n"
-            ."    Route::put('{$routeSubPath}/{id}', 'update');\r\n"
-            ."    Route::delete('{$routeSubPath}/{id}', 'destroy');\r\n"
-            ."});";
+            . "    Route::get('{$routeSubPath}' , 'index' );\r\n"
+            . "    Route::get('{$routeSubPath}/{id}' , 'show');\r\n"
+            . "    Route::post('{$routeSubPath}', 'store');\r\n"
+            . "    Route::put('{$routeSubPath}/{id}', 'update');\r\n"
+            . "    Route::delete('{$routeSubPath}/{id}', 'destroy');\r\n"
+            . "});";
     }
 
     /**
@@ -104,18 +163,19 @@ class MakeAPICommand extends Command
      * @param string $routeSubPath lowercased model name used as the URL segment
      * @return string
      */
-    protected function buildNestedRoutes(string $model, string $routeSubPath):string{
+    protected function buildNestedRoutes(string $model, string $routeSubPath): string
+    {
         $relations = (new Mapper([$model]))->getRelationshipMap()[$model] ?? [];
         $routes = '';
 
         foreach ($relations as $relation) {
             $related = $relation->getRelated();
-            if(is_null($related)){
+            if (is_null($related)) {
                 continue;
             }
 
             $relatedExploded = explode('\\', $related);
-            $relatedShortName = end( $relatedExploded );
+            $relatedShortName = end($relatedExploded);
             $relationName = $relation->getRelationName();
 
             $routes .= "\r\nRoute::get('{$routeSubPath}/{id}/{$relationName}', [\\App\\Http\\Controllers\\{$relatedShortName}Controller::class, 'index']);";
@@ -125,9 +185,9 @@ class MakeAPICommand extends Command
         return $routes;
     }
 
-    public function getModels(){
+    public function getModels()
+    {
         $input = $this->argument('model');
         return $input == 'all' ? $this->models : ["\\App\\Models\\$input"];
     }
-
 }
