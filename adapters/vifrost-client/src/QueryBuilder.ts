@@ -18,8 +18,8 @@ export class QueryBuilder<T> {
 
   constructor(
     private readonly path: string,
-    private readonly fetchMany: (path: string) => Promise<T[]>,
-    private readonly fetchOne: (id: string | number) => Promise<T>,
+    private readonly fetchMany: (path: string, includes: string[]) => Promise<T[]>,
+    private readonly fetchOne: (id: string | number, includes: string[]) => Promise<T>,
     private readonly maxLimit: number | null
   ) {}
 
@@ -117,15 +117,15 @@ export class QueryBuilder<T> {
 
   async get(): Promise<T[]> {
     if (this.explicitId !== undefined) {
-      return [await this.fetchOne(this.explicitId)]
+      return [await this.fetchOne(this.explicitId, this.state.includes)]
     }
     this.assertWithinLimit()
-    return this.fetchMany(`${this.path}${this.toQueryString()}`)
+    return this.fetchMany(`${this.path}${this.toQueryString()}`, this.state.includes)
   }
 
   async first(): Promise<T | null> {
     if (this.explicitId !== undefined) {
-      return this.fetchOne(this.explicitId)
+      return this.fetchOne(this.explicitId, this.state.includes)
     }
     const results = await this.limit(1).get()
     return results[0] ?? null

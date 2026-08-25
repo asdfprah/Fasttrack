@@ -53,7 +53,7 @@ export interface ModelConstructor<T extends Model = Model> {
    * via the base `Model` class unless they opt in.
    */
   maxLimit: number | null
-  instantiate<R extends Model>(this: ModelConstructor<R>, data: Record<string, unknown>): R
+  instantiate<R extends Model>(this: ModelConstructor<R>, data: Record<string, unknown>, includes?: string[]): R
   find<R extends Model>(this: ModelConstructor<R>, id: string | number): Promise<R>
   query<R extends Model>(this: ModelConstructor<R>): QueryBuilder<R>
 }

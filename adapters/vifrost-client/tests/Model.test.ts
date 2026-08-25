@@ -294,4 +294,27 @@ describe('Registry integration', () => {
     })
     expect(category.name).toBe('Widgets') // the OLD instance is untouched; the app swaps in the new one itself
   })
+
+  it('resync() replays the original .with() includes instead of dropping them', async () => {
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse([{ id: 1, name: 'Gadget', category_id: 9, category: { id: 9, name: 'Widgets' } }])
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: 1, name: 'Gadget', category_id: 9, category: { id: 9, name: 'Widgets (renamed)' } }))
+
+    const [product] = await Product.query().with('category').limit(10).get()
+    expect(product.category).toEqual({ id: 9, name: 'Widgets' })
+
+    const listener = vi.fn()
+    registry.subscribe<Product>('product', 1, listener)
+
+    await registry.resync('product', 1)
+
+    const resyncUrl = fetchMock.mock.calls[1][0] as string
+    expect(resyncUrl).toContain('include=category')
+
+    const [event] = listener.mock.calls[0]
+    expect(typeof event.value.category).toBe('object')
+    expect(event.value.category).toEqual({ id: 9, name: 'Widgets (renamed)' })
+  })
 })
