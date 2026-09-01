@@ -28,6 +28,20 @@ class Product extends Model {
   }
 }
 
+/** Same as Product, but with `relations` declared — as `@vifrost/codegen` would emit it. */
+class GuardedProduct extends Product {
+  static override relations = ['category']
+}
+
+/** Two relations, to exercise Model#load() loading more than one at once. */
+class MultiRelationProduct extends Product {
+  static override relations = ['category', 'reviews']
+
+  reviews(): Promise<unknown[]> {
+    return this.toMany('reviews', Category) // stand-in related class; not semantically meaningful here
+  }
+}
+
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -316,5 +330,146 @@ describe('Registry integration', () => {
     const [event] = listener.mock.calls[0]
     expect(typeof event.value.category).toBe('object')
     expect(event.value.category).toEqual({ id: 9, name: 'Widgets (renamed)' })
+  })
+})
+
+describe('unloadedRelationAccess', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    warnSpy.mockRestore()
+  })
+
+  it('warns (the default) when a row fetched without .with() has its relation read as data', async () => {
+    configure({ baseUrl: 'https://api.test', fetch: fetchMock as unknown as typeof fetch })
+    fetchMock.mockResolvedValue(jsonResponse([{ id: 1, name: 'Gadget', category_id: 9 }]))
+
+    const [product] = await GuardedProduct.query().limit(10).get()
+    const name = (product.category as unknown as { name: string }).name
+
+    expect(name).toBeUndefined()
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('"category" hasn\'t been loaded'))
+  })
+
+  it('does not warn when the row was fetched with .with("category")', async () => {
+    configure({ baseUrl: 'https://api.test', fetch: fetchMock as unknown as typeof fetch })
+    fetchMock.mockResolvedValue(
+      jsonResponse([{ id: 1, name: 'Gadget', category_id: 9, category: { id: 9, name: 'Widgets' } }])
+    )
+
+    const [product] = await GuardedProduct.query().with('category').limit(10).get()
+
+    expect(product.category).toEqual({ id: 9, name: 'Widgets' })
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('calling the relation method normally never warns, loaded or not', async () => {
+    configure({ baseUrl: 'https://api.test', fetch: fetchMock as unknown as typeof fetch })
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([{ id: 1, name: 'Gadget', category_id: 9 }]))
+      .mockResolvedValueOnce(jsonResponse([{ id: 9, name: 'Widgets' }]))
+
+    const [product] = await GuardedProduct.query().limit(10).get()
+    await expect(product.category()).resolves.toEqual({ id: 9, name: 'Widgets' })
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('throws instead of warning when configured with "error"', async () => {
+    configure({ baseUrl: 'https://api.test', fetch: fetchMock as unknown as typeof fetch, unloadedRelationAccess: 'error' })
+    fetchMock.mockResolvedValue(jsonResponse([{ id: 1, name: 'Gadget', category_id: 9 }]))
+
+    const [product] = await GuardedProduct.query().limit(10).get()
+
+    expect(() => (product.category as unknown as { name: string }).name).toThrow(/hasn't been loaded/)
+  })
+
+  it('skips the check entirely when configured with "off"', async () => {
+    configure({ baseUrl: 'https://api.test', fetch: fetchMock as unknown as typeof fetch, unloadedRelationAccess: 'off' })
+    fetchMock.mockResolvedValue(jsonResponse([{ id: 1, name: 'Gadget', category_id: 9 }]))
+
+    const [product] = await GuardedProduct.query().limit(10).get()
+    const name = (product.category as unknown as { name: string }).name
+
+    expect(name).toBe('category') // the old, un-guarded footgun — proves 'off' truly does nothing
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('a model with no declared relations is never wrapped, regardless of mode', async () => {
+    configure({ baseUrl: 'https://api.test', fetch: fetchMock as unknown as typeof fetch })
+    fetchMock.mockResolvedValue(jsonResponse([{ id: 1, name: 'Gadget', category_id: 9 }]))
+
+    const [product] = await Product.query().limit(10).get() // Product, not GuardedProduct — relations = []
+    const name = (product.category as unknown as { name: string }).name
+
+    expect(name).toBe('category')
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe('Model#load', () => {
+  beforeEach(() => {
+    configure({ baseUrl: 'https://api.test', fetch: fetchMock as unknown as typeof fetch })
+  })
+
+  it('throws, without fetching anything, when asked to load a relation that is not declared', async () => {
+    const product = new GuardedProduct({ id: 1, category_id: 9 })
+
+    await expect(product.load(['comments'])).rejects.toThrow(/has no relation\(s\) named: comments/)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('validates every requested name before fetching any of them', async () => {
+    const product = new MultiRelationProduct({ id: 1, category_id: 9 })
+
+    await expect(product.load(['category', 'bogus'])).rejects.toThrow(/has no relation\(s\) named: bogus/)
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('loads a declared relation and assigns it onto the instance, returning `this`', async () => {
+    fetchMock.mockResolvedValue(jsonResponse([{ id: 9, name: 'Widgets' }]))
+
+    const product = new GuardedProduct({ id: 1, category_id: 9 })
+    const result = await product.load(['category'])
+
+    expect(result).toBe(product)
+    expect(product.category).toEqual({ id: 9, name: 'Widgets' })
+  })
+
+  it('loads multiple relations in parallel — both requests are in flight before either resolves', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([{ id: 9, name: 'Widgets' }]))
+      .mockResolvedValueOnce(jsonResponse([{ id: 1, stars: 5 }]))
+
+    const product = new MultiRelationProduct({ id: 1, category_id: 9 })
+    const pending = product.load(['category', 'reviews'])
+
+    // Both underlying fetches start synchronously inside Promise.all's .map()
+    // — if load() awaited them one at a time instead, only one call would
+    // have happened yet at this point.
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+
+    await pending
+
+    expect(product.category).toEqual({ id: 9, name: 'Widgets' })
+    expect(product.reviews).toEqual([{ id: 1, stars: 5 }])
+  })
+
+  it('once loaded, a plain property read no longer trips the unloaded-relation guard', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse([{ id: 1, name: 'Gadget', category_id: 9 }])) // no .with()
+      .mockResolvedValueOnce(jsonResponse([{ id: 9, name: 'Widgets' }])) // load('category')
+
+    const [product] = await GuardedProduct.query().limit(10).get()
+    await product.load(['category'])
+
+    expect((product.category as unknown as { name: string }).name).toBe('Widgets')
+    expect(warnSpy).not.toHaveBeenCalled()
+
+    warnSpy.mockRestore()
   })
 })

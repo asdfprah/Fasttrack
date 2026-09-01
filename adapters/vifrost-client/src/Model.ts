@@ -1,4 +1,5 @@
-import { client, getRegistry } from './config.js'
+import { client, getRegistry, getUnloadedRelationAccess } from './config.js'
+import { guardUnloadedRelations } from './RelationGuard.js'
 import { QueryBuilder } from './QueryBuilder.js'
 import { buildQueryString, createQueryState } from './queryString.js'
 import type { ModelConstructor } from './types.js'
@@ -23,6 +24,13 @@ export class Model {
    * always set this precisely from the schema.
    */
   static maxLimit: number | null = null;
+  /**
+   * Names of the relation-loader methods this class declares (e.g.
+   * `["category", "comments"]`) — `@vifrost/codegen`-generated classes always
+   * set this precisely; hand-written subclasses default to `[]` (no
+   * enforcement) unless they opt in. See {@link Model.instantiate}.
+   */
+  static relations: string[] = [];
 
   [attributeName: string]: unknown
 
@@ -51,11 +59,7 @@ export class Model {
    *   function re-requests the same relations later, via the same
    *   `query().with(...).whereId(id).first()` chain a caller would use
    *   directly. Without this, a `Registry.resync()` triggered by a
-   *   real-time event would silently drop any eager-loaded relation: a
-   *   bare `find()` doesn't know to ask for it, and the resulting instance
-   *   falls back to exposing the relation-loader *method* itself (e.g.
-   *   `product.category`, a function) under the same property name, since
-   *   nothing overwrote it with data.
+   *   real-time event would silently drop any eager-loaded relation.
    */
   static instantiate<T extends Model>(
     this: ModelConstructor<T>,
@@ -73,7 +77,13 @@ export class Model {
           .first() as Promise<T>
       )
     }
-    return instance
+
+    const mode = getUnloadedRelationAccess()
+    if (mode === 'off' || this.relations.length === 0) {
+      return instance
+    }
+    const unloadedRelationNames = this.relations.filter((name) => !(name in attributes))
+    return guardUnloadedRelations(instance, unloadedRelationNames, mode)
   }
 
   /** Shorthand for `query().get()` — goes through the same `maxLimit` guard as any other collection fetch. */
@@ -146,6 +156,38 @@ export class Model {
     getRegistry()?.remove(modelConstructor.resource, primaryKeyValue)
   }
 
+  /**
+   * Loads one or more of this model's declared relations on an
+   * already-instantiated record — for filling in what a fetch didn't
+   * eager-load via `.with(...)`, without re-fetching the whole row.
+   *
+   * @remarks
+   * Validates every name against `static relations` (see
+   * `@vifrost/codegen`'s generated `relations` array) *before* fetching
+   * anything — a typo or an unsupported relation (MorphTo, one outside the
+   * generation batch) throws immediately
+   *
+   * @throws if any name isn't in `static relations`
+   */
+  async load(relationNames: string[]): Promise<this> {
+    const modelConstructor = this.constructor as ModelConstructor
+    const invalidNames = relationNames.filter((name) => !modelConstructor.relations.includes(name))
+    if (invalidNames.length > 0) {
+      throw new Error(
+        `${modelConstructor.name} has no relation(s) named: ${invalidNames.join(', ')}. ` +
+          `Available: ${modelConstructor.relations.join(', ') || '(none)'}.`
+      )
+    }
+
+    const values = await Promise.all(relationNames.map((name) => (this[name] as () => Promise<unknown>)()))
+
+    relationNames.forEach((name, index) => {
+      this[name] = values[index]
+    })
+
+    return this
+  }
+
   /** One-hop collection relation: `GET {resource}/{id}/{relationName}`. */
   protected async toMany<R extends Model>(relationName: string, related: ModelConstructor<R>): Promise<R[]> {
     const modelConstructor = this.constructor as ModelConstructor
@@ -157,15 +199,6 @@ export class Model {
 
   /**
    * A to-one relation (BelongsTo/HasOne/MorphOne).
-   *
-   * @remarks
-   * Verified empirically against a real Vifrost API: this is served by the
-   * exact same nested route as {@link Model.toMany} — Vifrost's generated
-   * controller always calls `->get()`, regardless of the underlying Eloquent
-   * relation type — so the response is a JSON array even for a to-one
-   * relation. `GET /product/1/category` really does return `[{...}]`, not a
-   * bare object. This takes the first element, or returns null if the
-   * relation is empty (e.g. a nullable foreign key).
    */
   protected async toOne<R extends Model>(relationName: string, related: ModelConstructor<R>): Promise<R | null> {
     const relatedRows = await this.toMany(relationName, related)

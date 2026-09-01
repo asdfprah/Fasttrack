@@ -12,6 +12,17 @@ export interface HttpClientOptions {
 }
 
 /**
+ * What happens when code reads a property off a relation-loader method that
+ * hasn't been loaded (e.g. `product.category.name` when the row wasn't
+ * fetched with `.with('category')`) — see {@link Model.relations}.
+ *
+ * - `'warn'` (default): `console.warn` and return `undefined`.
+ * - `'error'`: throw, right at the offending property access.
+ * - `'off'`: skip the check entirely — zero overhead, same as before this existed.
+ */
+export type UnloadedRelationAccess = 'off' | 'warn' | 'error'
+
+/**
  * Configuration accepted by {@link configure}.
  *
  * @remarks
@@ -21,6 +32,8 @@ export interface HttpClientOptions {
  */
 export interface ConfigureOptions extends HttpClientOptions {
   registry?: Registry
+  /** @defaultValue `'warn'` */
+  unloadedRelationAccess?: UnloadedRelationAccess
 }
 
 /**
@@ -53,6 +66,14 @@ export interface ModelConstructor<T extends Model = Model> {
    * via the base `Model` class unless they opt in.
    */
   maxLimit: number | null
+  /**
+   * Names of the relation-loader methods `@vifrost/codegen` generated for
+   * this model (e.g. `["category", "comments"]`) — used to detect, on each
+   * fetched row, which of them weren't eager-loaded via `.with(...)`. See
+   * {@link UnloadedRelationAccess}. Hand-written subclasses default to `[]`
+   * (no enforcement) via the base `Model` class unless they opt in.
+   */
+  relations: string[]
   instantiate<R extends Model>(this: ModelConstructor<R>, data: Record<string, unknown>, includes?: string[]): R
   find<R extends Model>(this: ModelConstructor<R>, id: string | number): Promise<R>
   query<R extends Model>(this: ModelConstructor<R>): QueryBuilder<R>
