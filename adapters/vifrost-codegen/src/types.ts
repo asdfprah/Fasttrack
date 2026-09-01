@@ -72,4 +72,13 @@ export interface RelationMethod {
   code: string
   /** The related class to import, or `null` if none is generated. */
   importName: string | null
+  /**
+   * Whether `code` is a real, callable relation-loader method rather than an
+   * explanatory comment (MorphTo, a relation outside this generation batch,
+   * or an unrecognized relation type) — see `generateRelationMethod`. Feeds
+   * `static relations` in the generated class, which `@vifrost/client`'s
+   * `Model.instantiate()` uses to warn/error when code reads a relation as
+   * data before it's been eager-loaded.
+   */
+  hasMethod: boolean
 }

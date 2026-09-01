@@ -87,6 +87,35 @@ describe('generateModelFile — real testbed schema (Category hasMany Product, P
     expect(content).toContain('MorphTo relation')
   })
 
+  it('lists every relation that got a real loader method in static relations', async () => {
+    const schema = await loadFixture()
+    const { content } = generateModelFile(
+      'App\\Models\\Product',
+      schema.models['App\\Models\\Product'],
+      knownModelsOf(schema)
+    )
+
+    expect(content).toContain('static relations = ["category","comments"];')
+  })
+
+  it('excludes a MorphTo relation from static relations — there is no method to guard', async () => {
+    const schema = await loadFixture()
+    const { content } = generateModelFile(
+      'App\\Models\\Comment',
+      schema.models['App\\Models\\Comment'],
+      knownModelsOf(schema)
+    )
+
+    expect(content).toContain('static relations = [];')
+  })
+
+  it('excludes a relation outside the generation batch from static relations', async () => {
+    const schema = await loadFixture()
+    const { content } = generateModelFile('App\\Models\\User', schema.models['App\\Models\\User'], knownModelsOf(schema))
+
+    expect(content).toContain('static relations = [];')
+  })
+
   it('skips a relation whose related model is outside this generation batch, without a broken import', async () => {
     // User.notifications -> Illuminate\Notifications\DatabaseNotification, a
     // framework class that Vifrost::models() never discovers as an app model
