@@ -1,0 +1,30 @@
+{
+  "branches": ["master"],
+  "tagFormat": "vifrost-client-v${version}",
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          { "release": false },
+          { "scope": "client", "type": "feat", "release": "minor" },
+          { "scope": "client", "type": "fix", "release": "patch" },
+          { "scope": "client", "type": "perf", "release": "patch" },
+          { "scope": "client", "breaking": true, "release": "major" }
+        ]
+      }
+    ],
+    ["@semantic-release/release-notes-generator", { "preset": "conventionalcommits" }],
+    ["@semantic-release/changelog", { "changelogFile": "CHANGELOG.md" }],
+    "@semantic-release/npm",
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["package.json", "CHANGELOG.md"],
+        "message": "chore(release): @vifrost/client v${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}
