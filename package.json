@@ -1,14 +1,9 @@
 {
-  "name": "vifrost-adapters",
+  "name": "vifrost-release-tooling",
   "private": true,
-  "workspaces": [
-    "vifrost-client",
-    "vifrost-codegen",
-    "vifrost-vue"
-  ],
+  "description": "semantic-release + commitlint toolchain for this repo — not a publishable package.",
   "scripts": {
-    "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces"
+    "prepare": "husky"
   },
   "devDependencies": {
     "semantic-release": "^24.2.0",
@@ -17,7 +12,9 @@
     "@semantic-release/changelog": "^6.0.0",
     "@semantic-release/git": "^10.0.0",
     "@semantic-release/github": "^11.0.0",
-    "@semantic-release/npm": "^12.0.0",
-    "conventional-changelog-conventionalcommits": "^8.0.0"
+    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "@commitlint/cli": "^19.6.0",
+    "@commitlint/config-conventional": "^19.6.0",
+    "husky": "^9.1.0"
   }
 }
