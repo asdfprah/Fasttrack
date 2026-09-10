@@ -8,6 +8,14 @@ on:
     types: [completed]
     branches: [master]
 
+# Every job below pushes a commit (and sometimes a tag) back to master on
+# success. Running them in parallel means whichever finishes first moves
+# origin/master out from under the others mid-run — semantic-release detects
+# its checkout is now behind the remote and safely aborts rather than
+# publishing from stale state ("The local branch master is behind the remote
+# one, therefore a new version won't be published."). Chaining them with
+# `needs:` forces one at a time, so each job's checkout always reflects
+# whatever the previous one already pushed.
 jobs:
   release-laravel:
     if: github.event.workflow_run.conclusion == 'success'
@@ -30,7 +38,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-client:
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: release-laravel
+    if: always() && needs.release-laravel.result != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -57,7 +66,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-codegen:
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: release-client
+    if: always() && needs.release-client.result != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -84,7 +94,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release-vue:
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: release-codegen
+    if: always() && needs.release-codegen.result != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       contents: write

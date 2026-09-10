@@ -63,10 +63,21 @@ General → Pull Requests** — only "Allow merge commits" should be checked.
 
 `.github/workflows/release.yml` runs on `workflow_run`, triggered only when
 `.github/workflows/tests.yml` finishes **successfully** on `master` — a
-release never ships on top of a failing test suite. Four independent jobs
-(one per target) each run `npx semantic-release` scoped to their own
-directory and `.releaserc.json`; a job with nothing to release for its scope
-is a safe no-op (no version bump, no publish, no tag).
+release never ships on top of a failing test suite. Four jobs (one per
+target) each run `npx semantic-release` scoped to their own directory and
+`.releaserc.json`; a job with nothing to release for its scope is a safe
+no-op (no version bump, no publish, no tag).
+
+**They run chained (`release-laravel` → `release-client` → `release-codegen`
+→ `release-vue`), not in parallel.** Every job that actually releases
+something pushes a commit (and sometimes a tag) back to `master`. Running
+them concurrently means whichever finishes first moves `origin/master` out
+from under the others mid-run — semantic-release notices its checkout is now
+behind the remote and safely refuses to publish rather than risk releasing
+from stale state. Each `needs:` step's `if: always() && needs.X.result !=
+'cancelled'` means one target failing (e.g. a real npm auth error) doesn't
+block the next target in the chain from still getting its turn — only an
+actual `cancelled` run short-circuits the rest.
 
 ## Publishing mechanism per target
 
@@ -142,6 +153,35 @@ this way, both worth checking first if a run fails again:
   configured (or was misconfigured) for that package on npmjs.com. See
   "One-time setup" above; this is a registry-side config issue, not
   something fixable in this repo's files.
+- **`npm publish` returns 403 "OIDC permission denied for this action"**
+  (different from the 401 above — this means OIDC auth *succeeded*, but the
+  registry won't let *this* action through): the Trusted Publisher entry for
+  that specific package on npmjs.com doesn't match this repo/workflow, or
+  wasn't saved. A 401 means "not authenticated at all"; a 403 here means
+  "authenticated, but not authorized" — check the Trusted Publisher config
+  for that exact package, not the OIDC wiring in this repo.
+- **A job aborts with "The local branch master is behind the remote one,
+  therefore a new version won't be published"**: another job in the chain
+  pushed a commit to `master` after this job's checkout but before it
+  reached that check — i.e. the jobs ran concurrently instead of chained.
+  See "What triggers a release" above; the fix is the `needs:` chain
+  in `release.yml`, not anything in the `.releaserc.json` files.
+- **`@semantic-release/npm`'s `verify-auth.js`/`set-npmrc-auth.js` runs but
+  never even logs trying OIDC, going straight to `NPM_TOKEN`/`.npmrc`
+  checks**: the installed `@semantic-release/npm` doesn't support Trusted
+  Publishing at all (OIDC support was added in 13.x; nothing before it has
+  any OIDC code path). Worse, it can be silently *shadowed*: `semantic-release`
+  (the core package) itself depends on a specific `@semantic-release/npm`
+  version as one of its default bundled plugins — if that pin is older than
+  what's declared at the top level, npm can't dedupe them and nests the
+  older copy inside `node_modules/semantic-release/node_modules/`, which is
+  the one semantic-release's plugin loader actually resolves, silently
+  ignoring the newer top-level install. Check with:
+  `find node_modules -path "*@semantic-release/npm/package.json"` — if
+  that lists more than one path, you have this problem. Fix by bumping the
+  core `semantic-release` package itself to a version whose own declared
+  dependency on `@semantic-release/npm` is already 13.x+ (rather than
+  fighting it with `overrides`), so both resolve to one deduped copy.
 - **Every failure above also crashes a second time in `@semantic-release/github`'s
   "fail" step**, with `Error: Variable $owner of type String! was provided
   invalid value`. This is noise on top of whatever the real failure was
