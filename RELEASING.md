@@ -120,3 +120,32 @@ this way, both worth checking first if a run fails again:
   hardcoded `chore(release): ...` — `release` isn't one of the four valid
   scopes). The release commit message templates must use one of
   `client`/`codegen`/`vue`/`laravel` like everything else does.
+- **`git commit` still fails after the scope is fixed, this time on
+  `body-max-line-length`**: the auto-generated changelog body (full commit
+  list with markdown links) routinely blows past commitlint's default
+  100-char line limit — this isn't a real problem to fix in the message,
+  it's commitlint linting a machine-generated commit as if a human typed it.
+  `commitlint.config.js` has an `ignores` entry that skips linting entirely
+  for any commit matching `^chore\((client|codegen|vue|laravel)\): release v`
+  — if this fires again, check that regex still matches every
+  `.releaserc.json`'s `message` template.
+- **`npm run build` fails inside `release-vue` (or any job depending on
+  another workspace package) with "Cannot find module '@vifrost/client'"**:
+  that job only built its own package directory, not the other workspace
+  packages its `dist/` type declarations depend on. Fix: build from
+  `adapters/` (the `npm run build --workspaces` script, which builds in
+  `workspaces` array order — `vifrost-client` first, matching its position
+  in `adapters/package.json`), not from the individual package directory.
+- **`npm whoami` returns 401 inside a release job's `verifyConditions`
+  step**: the OIDC trusted-publishing handshake was rejected by the
+  registry — almost always because the npm Trusted Publisher was never
+  configured (or was misconfigured) for that package on npmjs.com. See
+  "One-time setup" above; this is a registry-side config issue, not
+  something fixable in this repo's files.
+- **Every failure above also crashes a second time in `@semantic-release/github`'s
+  "fail" step**, with `Error: Variable $owner of type String! was provided
+  invalid value`. This is noise on top of whatever the real failure was
+  above, not a separate root cause — hasn't been tracked down further since
+  it stopped mattering once the actual failures were fixed, but if it's ever
+  the *only* error with no other failed step above it, that's worth
+  investigating properly instead of assuming it's secondary.
