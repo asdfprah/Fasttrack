@@ -208,6 +208,28 @@ this way, both worth checking first if a run fails again:
   core `semantic-release` package itself to a version whose own declared
   dependency on `@semantic-release/npm` is already 13.x+ (rather than
   fighting it with `overrides`), so both resolve to one deduped copy.
+- **`npm publish` returns 422 "Error verifying sigstore provenance bundle: Failed
+  to validate repository information: package.json: "repository.url" is "",
+  expected to match "https://github.com/asdfprah/vifrost" from provenance"**:
+  npm's registry cross-checks the GitHub Actions OIDC provenance attestation
+  (which asserts which repo actually built the tarball) against the
+  `repository.url` field *inside the published package.json* — none of the
+  three `adapters/*/package.json` files had a `repository` field at all, so
+  npm read it as an empty string and rejected the mismatch. This only surfaces
+  the first time a package with a real code change actually reaches the `npm
+  publish` step (`@vifrost/client` and `@vifrost/vue` didn't hit it yet in the
+  run that found this, because they had nothing to release and were safe
+  no-ops). Fix: add a `repository` field to each package's `package.json`:
+  `{"type": "git", "url": "git+https://github.com/asdfprah/vifrost.git",
+  "directory": "adapters/vifrost-<name>"}`. Gotcha: the version bump commit
+  and git tag for the failed release (e.g. `vifrost-codegen-v0.2.0`) had
+  *already* been created and pushed by the time `npm publish` failed —
+  semantic-release tags the release commit before running the `publish` step
+  plugins, not after. The npm registry never got that version, but re-running
+  won't retry it: the next commit just bumps to the next patch (e.g. `0.2.1`)
+  since semantic-release sees the `0.2.0` tag and considers it "already
+  released" for versioning purposes, and that next version is what actually
+  reaches npm.
 - **Every failure above also crashes a second time in `@semantic-release/github`'s
   "fail" step**, with `Error: Variable $owner of type String! was provided
   invalid value`. This is noise on top of whatever the real failure was
