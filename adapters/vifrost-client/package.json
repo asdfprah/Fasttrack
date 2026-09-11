@@ -8,6 +8,11 @@
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/asdfprah/vifrost.git",
+    "directory": "adapters/vifrost-client"
+  },
   "publishConfig": {
     "access": "public"
   },
