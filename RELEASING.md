@@ -88,9 +88,22 @@ actual `cancelled` run short-circuits the rest.
 - **npm packages**: `@semantic-release/npm` bumps `package.json` and runs
   `npm publish`, authenticated via **npm Trusted Publishing (OIDC)** — no
   `NPM_TOKEN` secret stored anywhere. Requires `permissions: id-token: write`
-  on the job (already set) and a Trusted Publisher configured per package on
-  npmjs.com pointing at this repo + the exact workflow filename
-  (`release.yml`).
+  on the job (already set), npm CLI ≥11.5.1 (the `npm install -g npm@latest`
+  step), a Trusted Publisher configured per package on npmjs.com pointing at
+  this repo + the exact workflow filename (`release.yml`), and — easy to
+  miss — that Trusted Publisher's **"Allowed actions"** must explicitly
+  permit "publish directly", not just the default-allowed "stage publish".
+  `@semantic-release/npm` runs a plain `npm publish`, which is the "publish
+  directly" action; leaving only "stage publish" allowed produces a
+  confusing 403 (see "Debugging" below).
+- **The three npm packages share one lockfile** (`adapters/package-lock.json`,
+  npm workspaces). `@semantic-release/npm`'s `prepare` step bumps only that
+  package's own `package.json`, which leaves the shared lockfile's recorded
+  version for that workspace entry stale — an `@semantic-release/exec` step
+  runs `npm install --package-lock-only` (from `adapters/`) right after, and
+  `@semantic-release/git`'s `assets` includes `../package-lock.json`, so the
+  regenerated lockfile is part of the same release commit instead of drifting
+  out of sync for the *next* run to trip over.
 
 ## Local dev setup
 
@@ -155,11 +168,24 @@ this way, both worth checking first if a run fails again:
   something fixable in this repo's files.
 - **`npm publish` returns 403 "OIDC permission denied for this action"**
   (different from the 401 above — this means OIDC auth *succeeded*, but the
-  registry won't let *this* action through): the Trusted Publisher entry for
-  that specific package on npmjs.com doesn't match this repo/workflow, or
-  wasn't saved. A 401 means "not authenticated at all"; a 403 here means
-  "authenticated, but not authorized" — check the Trusted Publisher config
-  for that exact package, not the OIDC wiring in this repo.
+  registry won't let *this* action through): confirmed cause once — the
+  Trusted Publisher's **"Allowed actions"** setting on npmjs.com only had
+  "stage publish" enabled (the default), not "publish directly", and
+  `@semantic-release/npm` always does a plain direct `npm publish`. A 401
+  means "not authenticated at all"; this 403 means "authenticated, but this
+  specific action isn't permitted" — check that toggle before anything else
+  in this repo.
+- **`npm ci` fails with "Missing: @vifrost/<package>@X.Y.Z from lock file"**
+  (note: this is the *workspace package itself* missing, not a third-party
+  dependency — see the first `npm ci` entry above for that variant): a
+  previous release run's `@semantic-release/npm` bumped that package's
+  `package.json` version and got as far as committing it, but failed before
+  (or without) resyncing `adapters/package-lock.json` to match — leaving the
+  lockfile recording the *old* version for that workspace entry. This is
+  exactly what the `@semantic-release/exec` prepare step (see "Publishing
+  mechanism per target" above) exists to prevent going forward; if it
+  happens anyway, fix it the same way manually: `npm install` in `adapters/`
+  to resync, commit the updated lockfile.
 - **A job aborts with "The local branch master is behind the remote one,
   therefore a new version won't be published"**: another job in the chain
   pushed a commit to `master` after this job's checkout but before it
