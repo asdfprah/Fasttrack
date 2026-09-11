@@ -1,3 +1,9 @@
+## [0.2.1](https://github.com/asdfprah/vifrost/compare/vifrost-codegen-v0.2.0...vifrost-codegen-v0.2.1) (2026-09-11)
+
+### Bug Fixes
+
+* **codegen:** add repository field to package.json for npm provenance ([cefe94f](https://github.com/asdfprah/vifrost/commit/cefe94f2e44b0818ed5d10b126a53f5d34d82275))
+
 ## [0.2.0](https://github.com/asdfprah/vifrost/compare/vifrost-codegen-v0.1.0...vifrost-codegen-v0.2.0) (2026-09-11)
 
 ### Features
