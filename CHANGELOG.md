@@ -1,3 +1,14 @@
+## [0.3.0](https://github.com/asdfprah/vifrost/compare/v0.2.0...v0.3.0) (2026-09-12)
+
+### Features
+
+* **laravel:** improved controller test ([8fedf12](https://github.com/asdfprah/vifrost/commit/8fedf12346b0d9e4807b1532c4c1443e5ddfcbec))
+* **laravel:** moved pagination to controller, added count header ([d105ce0](https://github.com/asdfprah/vifrost/commit/d105ce0a6a92617e3ba6ecac0e91ab86a5c02e76))
+
+### Bug Fixes
+
+* **codegen:** add repository field to package.json for npm provenance ([cefe94f](https://github.com/asdfprah/vifrost/commit/cefe94f2e44b0818ed5d10b126a53f5d34d82275))
+
 ## [0.2.0](https://github.com/asdfprah/vifrost/compare/v0.1.1...v0.2.0) (2026-09-10)
 
 ### Features
