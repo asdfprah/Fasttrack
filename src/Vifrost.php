@@ -67,9 +67,11 @@ class Vifrost{
      * doesn't require the URL itself to nest. Anything deeper than one relation hop
      * aborts with 404, as does a relation requested off a record that doesn't exist.
      *
-     * The two collection shapes (index, nested collection) go through
-     * Pagination::resolveLimit()/resolveOffset() — see paginate() below — the two
-     * single-record shapes never do.
+     * This method only resolves and scopes the query — it never applies limit/offset.
+     * That's deliberately left to the generated controller (see Controller.stub's
+     * index(), which calls Pagination::resolveLimit()/resolveOffset() itself) instead
+     * of being hidden inside this package: the controller is the one file a developer
+     * actually owns and reads, so pagination should be visible there.
      *
      * @return \Illuminate\Database\Eloquent\Builder|\Illuminate\Database\Eloquent\Relations\Relation
      */
@@ -83,7 +85,7 @@ class Vifrost{
         $query = (new $rootModel)->query();
 
         if( count($path) === 1 ){
-            return $this->paginate($query, $rootModel);
+            return $query;
         }
 
         if( !is_numeric($path[1]) ){
@@ -103,38 +105,13 @@ class Vifrost{
         $relation = $this->resolveRelation($model, $path[2]);
 
         if( count($path) === 3 ){
-            return $this->paginate($relation, get_class($relation->getRelated()));
+            return $relation;
         }
 
         if( !is_numeric($path[3]) ){
             abort(404);
         }
         return $relation->where('id', $path[3]);
-    }
-
-    /**
-     * Applies the configured limit/offset for $modelClass (see Pagination) to a
-     * collection query — the index and nested-relation-collection shapes only.
-     * Single-record lookups (show, nested show) never go through here.
-     *
-     * offset() is only ever applied alongside a real limit(): an OFFSET clause
-     * with no LIMIT is invalid SQL on SQLite (and MySQL), so a model exempt from
-     * pagination with no ?limit= given returns everything, ignoring ?offset= —
-     * the client can still get an offset from an exempt model by also passing
-     * ?limit= (Pagination::resolveLimit() honors an explicit one either way).
-     *
-     * @param mixed $query
-     * @param string $modelClass model full classname
-     * @return mixed
-     */
-    private function paginate($query, string $modelClass){
-        $limit = Pagination::resolveLimit($modelClass);
-
-        if( is_null($limit) ){
-            return $query;
-        }
-
-        return $query->limit($limit)->offset(Pagination::resolveOffset());
     }
 
     /**
