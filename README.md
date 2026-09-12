@@ -115,17 +115,27 @@ reachable in a single request via Spatie's `?include=posts.comments` on the flat
 `index`/`show` route instead, since every generated controller wires
 `Spatie\QueryBuilder\QueryBuilder` with `allowedIncludes` for the model's relations.
 
-Filtering and sorting are opt-in per model: the generated controller ships
-`->allowedFilters([])` **commented out**, and `->allowedSorts([...])` pre-filled with
-only `['id', 'created_at', 'updated_at']`. Uncomment/extend those in
+Filtering, sorting and includes are opt-in per model, and the generated controller
+keeps the first two consolidated in one place — `allowedFilters()`/`allowedIncludes()`
+private methods shared by both `index()` and `show()` — so extending them can't
+accidentally leave the two endpoints out of sync with each other. `allowedFilters()`
+starts empty and `->allowedSorts([...])` ships pre-filled with only
+`['id', 'created_at', 'updated_at']`. Edit those methods in
 `app/Http/Controllers/{Model}Controller.php` with whichever columns should be
 filterable/sortable before relying on `.where()`/`.orderBy()` from the JS client
 (part 2) — otherwise Spatie ignores the corresponding query param.
 
 Collection endpoints (`index`, and any nested relation collection) accept
-`?limit=` / `?offset=`, resolved centrally in `Vifrost::getQuery()` against the
-`max_limit` / `max_limit_per_model` config (see [`Pagination`](src/Pagination.php)).
-Single-record endpoints (`show`) never paginate.
+`?limit=` / `?offset=`, resolved in the generated controller's own `index()` method
+against the `max_limit` / `max_limit_per_model` config (see
+[`Pagination`](src/Pagination.php)) — deliberately not hidden inside `Vifrost::getQuery()`,
+so pagination stays visible and editable in the file you actually own. `index()` also
+reports how many rows matched (independent of the current page) via an `X-Total-Count`
+response header, for building a pager on the client. A model configured as exempt from
+pagination (`max_limit_per_model` set to `null`) has no default limit to offset within,
+so `?offset=` with no `?limit=` given returns a `422` instead of being silently ignored
+— pass an explicit `?limit=` alongside it and it works normally, even for an exempt
+model. Single-record endpoints (`show`) never paginate.
 
 You can also generate just one piece:
 
