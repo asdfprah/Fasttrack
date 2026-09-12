@@ -1,45 +1,59 @@
 <?php
 
 use Vifrost\Laravel\Vifrost;
-use Vifrost\Laravel\Pagination;
 use Vifrost\Laravel\Tests\Fixtures\Category;
 use Vifrost\Laravel\Tests\Fixtures\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Spatie\QueryBuilder\QueryBuilder;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Regression coverage for Controller.stub's index(): Vifrost::getQuery() only resolves
- * and scopes the query (see VifrostQueryTest.php) — limit/offset and the X-Total-Count
- * total are entirely the generated controller's responsibility, moved there
- * deliberately so pagination is visible in a file the developer actually owns and reads,
- * instead of being hidden inside this package. This helper mirrors index()'s exact
- * logic, in the exact same order, so a change to one without the other shows up here.
+ * Regression coverage for Controller.stub's index(): this runs the REAL generated
+ * controller (via the actual vifrost:controller command), not a hand-written copy of
+ * its logic — a change to the stub that isn't reflected here fails these tests instead
+ * of silently drifting out of sync with what actually ships.
  */
-function controllerIndexFor(string $modelClass, string $path, array $query = [])
+function generatedProductControllerClass(): string
 {
+    static $generated = false;
+
+    if (! class_exists('App\Http\Controllers\Controller', false)) {
+        class_alias(\Illuminate\Routing\Controller::class, 'App\Http\Controllers\Controller');
+    }
+
+    if (! class_exists('App\Models\Product', false)) {
+        class_alias(Product::class, 'App\Models\Product');
+    }
+
+    if (! $generated) {
+        File::deleteDirectory(__DIR__ . '/../Fixtures/Http');
+        Artisan::call('vifrost:controller', ['model' => 'Product', '--force' => true]);
+        require_once __DIR__ . '/../Fixtures/Http/Controllers/ProductController.php';
+        class_alias('App\Http\Controllers\ProductController', 'Vifrost\Laravel\Tests\Fixtures\Http\Controllers\ProductController');
+        $generated = true;
+    }
+
+    return 'App\Http\Controllers\ProductController';
+}
+
+afterAll(function () {
+    File::deleteDirectory(__DIR__ . '/../Fixtures/Http');
+});
+
+function controllerIndexFor(string $path, array $query = []): array
+{
+    $controllerClass = generatedProductControllerClass();
+
     app()->instance('request', Request::create('/' . $path, 'GET', $query));
 
-    $resolvedQuery = (new Vifrost)->getQuery();
+    $response = (new $controllerClass())->index();
 
-    $queryBuilder = QueryBuilder::for($resolvedQuery)
-        ->allowedFilters([])
-        ->allowedIncludes([])
-        ->allowedSorts(['id']);
+    $rows = collect(json_decode($response->getContent(), true));
+    $total = (int) $response->headers->get('X-Total-Count');
 
-    $total = $queryBuilder->toBase()->getCountForPagination();
-
-    $limit = Pagination::resolveLimit($modelClass);
-
-    if (is_null($limit) && request()->has('offset')) {
-        abort(422, '?offset= requires ?limit= to also be provided for this resource.');
-    }
-
-    if (! is_null($limit)) {
-        $queryBuilder->limit($limit)->offset(Pagination::resolveOffset());
-    }
-
-    return [$queryBuilder->get(), $total];
+    return [$rows, $total];
 }
 
 beforeEach(function () {
@@ -60,14 +74,14 @@ beforeEach(function () {
 it('applies the global max_limit by default, with no ?limit= at all, and reports the real total', function () {
     config(['vifrost.max_limit' => 3]);
 
-    [$rows, $total] = controllerIndexFor(Product::class, 'api/product');
+    [$rows, $total] = controllerIndexFor('api/product');
 
     expect($rows)->toHaveCount(3);
     expect($total)->toBe(5);
 });
 
 it('honors an explicit ?limit= under the cap, and still reports the real total', function () {
-    [$rows, $total] = controllerIndexFor(Product::class, 'api/product', ['limit' => 2]);
+    [$rows, $total] = controllerIndexFor('api/product', ['limit' => 2]);
 
     expect($rows)->toHaveCount(2);
     expect($total)->toBe(5);
@@ -76,15 +90,15 @@ it('honors an explicit ?limit= under the cap, and still reports the real total',
 it('clamps an explicit ?limit= over the cap down to the cap', function () {
     config(['vifrost.max_limit' => 3]);
 
-    [$rows, $total] = controllerIndexFor(Product::class, 'api/product', ['limit' => 999]);
+    [$rows, $total] = controllerIndexFor('api/product', ['limit' => 999]);
 
     expect($rows)->toHaveCount(3);
     expect($total)->toBe(5);
 });
 
 it('shifts the result window with ?offset= without the total changing', function () {
-    [$firstPage, $firstTotal] = controllerIndexFor(Product::class, 'api/product', ['limit' => 2, 'offset' => 0]);
-    [$secondPage, $secondTotal] = controllerIndexFor(Product::class, 'api/product', ['limit' => 2, 'offset' => 2]);
+    [$firstPage, $firstTotal] = controllerIndexFor('api/product', ['limit' => 2, 'offset' => 0]);
+    [$secondPage, $secondTotal] = controllerIndexFor('api/product', ['limit' => 2, 'offset' => 2]);
 
     expect($firstPage->pluck('id')->all())->not->toEqual($secondPage->pluck('id')->all());
     expect($firstTotal)->toBe(5);
@@ -93,7 +107,6 @@ it('shifts the result window with ?offset= without the total changing', function
 
 it('paginates a nested relation collection the same way as a flat index', function () {
     [$rows, $total] = controllerIndexFor(
-        Product::class,
         'api/category/' . $this->category->id . '/products',
         ['limit' => 2]
     );
@@ -103,27 +116,27 @@ it('paginates a nested relation collection the same way as a flat index', functi
 });
 
 it('returns everything unbounded for a model configured as exempt, but still reports the real total', function () {
-    config(['vifrost.max_limit_per_model' => [Product::class => null]]);
+    config(['vifrost.max_limit_per_model' => ['App\Models\Product' => null]]);
 
-    [$rows, $total] = controllerIndexFor(Product::class, 'api/product');
+    [$rows, $total] = controllerIndexFor('api/product');
 
     expect($rows)->toHaveCount(5);
     expect($total)->toBe(5);
 });
 
 it('rejects ?offset= with a 422 when given without ?limit= for a model exempt from pagination', function () {
-    config(['vifrost.max_limit_per_model' => [Product::class => null]]);
+    config(['vifrost.max_limit_per_model' => ['App\Models\Product' => null]]);
 
-    expect(fn() => controllerIndexFor(Product::class, 'api/product', ['offset' => 2]))
+    expect(fn() => controllerIndexFor('api/product', ['offset' => 2]))
         ->toThrow(function (HttpException $e) {
             expect($e->getStatusCode())->toBe(422);
         });
 });
 
 it('still honors ?offset= for an exempt model when ?limit= is given explicitly alongside it', function () {
-    config(['vifrost.max_limit_per_model' => [Product::class => null]]);
+    config(['vifrost.max_limit_per_model' => ['App\Models\Product' => null]]);
 
-    [$rows, $total] = controllerIndexFor(Product::class, 'api/product', ['limit' => 2, 'offset' => 2]);
+    [$rows, $total] = controllerIndexFor('api/product', ['limit' => 2, 'offset' => 2]);
 
     expect($rows)->toHaveCount(2);
     expect($total)->toBe(5);
@@ -146,5 +159,9 @@ it('unlike getCountForPagination(), a plain ->count() silently returns 0 once ?o
         ->allowedFilters([])->allowedIncludes([])->allowedSorts(['id'])
         ->limit(2)->offset(2);
 
+    // Why the stub reaches for getCountForPagination() instead of the obvious
+    // ->count(): a COUNT(*) query has exactly one result row, so any already-applied
+    // ?offset= beyond 0 skips that row entirely — this returns 0, not the total, not
+    // even the page size.
     expect($queryBuilder->count())->toBe(0);
 });
